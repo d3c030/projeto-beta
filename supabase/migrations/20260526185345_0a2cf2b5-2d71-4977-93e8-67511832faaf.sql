@@ -1,0 +1,1 @@
+ALTER TABLE public.contact_settings ADD COLUMN IF NOT EXISTS pix_qr_url text;

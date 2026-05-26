@@ -1,0 +1,2 @@
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'a_fazer';
+ALTER TABLE public.appointments ADD CONSTRAINT appointments_status_check CHECK (status IN ('a_fazer','concluido','cancelado'));

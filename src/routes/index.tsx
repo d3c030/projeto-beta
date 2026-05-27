@@ -3,12 +3,13 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+  ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
 import {
   fetchAppointments, fetchExpenses, fetchUpcomingAppointments,
-  fetchDistinctProcedures, updateAppointment, updateAppointmentStatus,
+  fetchDistinctProcedures, createAppointment, updateAppointment, updateAppointmentStatus,
   deleteAppointment, fetchReceivables, APPOINTMENT_STATUS_LABEL,
+  createExpense, updateExpense, deleteExpense, type Expense,
   type Appointment, type AppointmentStatus,
 } from "@/lib/data";
 import { formatBRL, formatDateBR, PAYMENT_METHODS } from "@/lib/format";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppointmentDialog } from "@/components/AppointmentDialog";
+import { ExpenseDialog } from "@/components/ExpenseDialog";
 import { CheckoutSheet } from "@/components/CheckoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -68,6 +70,8 @@ function Dashboard() {
   const [monthIdx, setMonthIdx] = useState(now.getMonth());
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutAppt, setCheckoutAppt] = useState<Appointment | null>(null);
   const qc = useQueryClient();
@@ -100,6 +104,7 @@ function Dashboard() {
     qc.invalidateQueries({ queryKey: ["procedures"] });
     qc.invalidateQueries({ queryKey: ["clients"] });
     qc.invalidateQueries({ queryKey: ["receivables"] });
+    qc.invalidateQueries({ queryKey: ["expenses"] });
   };
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
@@ -161,6 +166,7 @@ function Dashboard() {
   const dailyData = useMemo(() => {
     const sums = new Array(daysInMonth).fill(0) as number[];
     const counts = new Array(daysInMonth).fill(0) as number[];
+    const costs = new Array(daysInMonth).fill(0) as number[];
     (apptsQ.data ?? []).forEach((a) => {
       // a.date is "YYYY-MM-DD"
       const d = Number(String(a.date).slice(8, 10));
@@ -169,15 +175,22 @@ function Dashboard() {
         counts[d - 1] += 1;
       }
     });
+    (expQ.data ?? []).forEach((e) => {
+      const d = Number(String(e.date).slice(8, 10));
+      if (d >= 1 && d <= daysInMonth) {
+        costs[d - 1] += Number(e.total || 0);
+      }
+    });
     return sums.map((v, i) => ({
       day: i + 1,
       label: String(i + 1).padStart(2, "0"),
       value: v,
       count: counts[i],
+      cost: costs[i],
       isToday: isCurrentMonth && i + 1 === todayDay,
       isFuture: isCurrentMonth && i + 1 > todayDay,
     }));
-  }, [apptsQ.data, daysInMonth, isCurrentMonth, todayDay]);
+  }, [apptsQ.data, expQ.data, daysInMonth, isCurrentMonth, todayDay]);
 
   const bestDay = useMemo(() => {
     const ranked = [...dailyData].filter((d) => d.value > 0)
@@ -204,7 +217,15 @@ function Dashboard() {
             onClick={() => { setEditing(null); setDialogOpen(true); }}
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Novo
+            Atendimento
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setEditingExpense(null); setExpenseDialogOpen(true); }}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Custo
           </Button>
         </div>
       </div>
@@ -366,7 +387,7 @@ function Dashboard() {
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <ComposedChart data={dailyData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
                     dataKey="label"
@@ -393,13 +414,14 @@ function Dashboard() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
-                    formatter={(value: number, _n, item: { payload?: { count?: number } }) => [
-                      `${formatBRL(value)} · ${item?.payload?.count ?? 0} atend.`,
-                      "Entradas",
-                    ]}
+                    formatter={(value: number, name: string, item: { payload?: { count?: number } }) => {
+                      if (name === "Custos") return [formatBRL(value), "Custos"];
+                      return [`${formatBRL(value)} · ${item?.payload?.count ?? 0} atend.`, "Entradas"];
+                    }}
                     labelFormatter={(l: string) => `Dia ${l}`}
                   />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                  <Bar dataKey="value" name="Entradas" radius={[6, 6, 0, 0]}>
                     {dailyData.map((d) => (
                       <Cell
                         key={d.day}
@@ -413,7 +435,16 @@ function Dashboard() {
                       />
                     ))}
                   </Bar>
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="cost"
+                    name="Custos"
+                    stroke="var(--destructive)"
+                    strokeWidth={2}
+                    dot={{ r: 2.5, fill: "var(--destructive)" }}
+                    activeDot={{ r: 4 }}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -571,6 +602,82 @@ function Dashboard() {
         onSaved={invalidateAll}
       />
 
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingDown className="h-4 w-4 text-destructive" />
+            Custos do mês
+          </CardTitle>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              Total: <span className="font-medium text-foreground tabular-nums">{formatBRL(custos)}</span>
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              onClick={() => { setEditingExpense(null); setExpenseDialogOpen(true); }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Novo
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {expQ.isLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Carregando…</p>
+          ) : (expQ.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Nenhum custo registrado neste mês.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/70 text-left text-xs uppercase text-muted-foreground">
+                    <th className="py-2 font-medium w-24">Data</th>
+                    <th className="py-2 font-medium">Descrição</th>
+                    <th className="py-2 font-medium text-right w-20">Qtd</th>
+                    <th className="py-2 font-medium text-right w-28">Unit.</th>
+                    <th className="py-2 font-medium text-right w-28">Total</th>
+                    <th className="py-2 font-medium w-28">Pagamento</th>
+                    <th className="py-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/70">
+                  {(expQ.data ?? []).map((e) => (
+                    <tr key={e.id}>
+                      <td className="py-2.5 tabular-nums text-muted-foreground">{formatDateBR(e.date)}</td>
+                      <td className="py-2.5">{e.description}</td>
+                      <td className="py-2.5 text-right tabular-nums">{Number(e.quantity)}</td>
+                      <td className="py-2.5 text-right tabular-nums">{formatBRL(Number(e.unit_price))}</td>
+                      <td className="py-2.5 text-right tabular-nums font-medium">{formatBRL(Number(e.total))}</td>
+                      <td className="py-2.5 text-muted-foreground">{e.payment_method ?? "—"}</td>
+                      <td className="py-2.5 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Editar"
+                          onClick={() => { setEditingExpense(e); setExpenseDialogOpen(true); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-border font-medium">
+                    <td className="py-2.5" colSpan={4}>Total</td>
+                    <td className="py-2.5 text-right tabular-nums">{formatBRL(custos)}</td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <AppointmentDialog
         open={dialogOpen}
@@ -578,10 +685,14 @@ function Dashboard() {
         initial={editing}
         procedureSuggestions={procsQ.data}
         onSubmit={async (data) => {
-          if (!editing) return;
           try {
-            await updateAppointment(editing.id, data);
-            toast.success("Atendimento atualizado");
+            if (editing) {
+              await updateAppointment(editing.id, data);
+              toast.success("Atendimento atualizado");
+            } else {
+              await createAppointment(data);
+              toast.success("Atendimento criado");
+            }
             invalidateAll();
           } catch (e) {
             toast.error("Erro ao guardar");
@@ -608,6 +719,40 @@ function Dashboard() {
         onOpenChange={setCheckoutOpen}
         appointment={checkoutAppt}
         onCompleted={invalidateAll}
+      />
+
+      <ExpenseDialog
+        open={expenseDialogOpen}
+        onOpenChange={setExpenseDialogOpen}
+        initial={editingExpense}
+        onSubmit={async (data) => {
+          try {
+            if (editingExpense) {
+              await updateExpense(editingExpense.id, data);
+              toast.success("Custo atualizado");
+            } else {
+              await createExpense(data);
+              toast.success("Custo registrado");
+            }
+            invalidateAll();
+          } catch (e) {
+            toast.error("Erro ao guardar custo");
+            throw e;
+          }
+        }}
+        onDelete={
+          editingExpense
+            ? async () => {
+                try {
+                  await deleteExpense(editingExpense.id);
+                  toast.success("Custo apagado");
+                  invalidateAll();
+                } catch {
+                  toast.error("Erro ao apagar");
+                }
+              }
+            : undefined
+        }
       />
     </div>
   );

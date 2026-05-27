@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock } from "lucide-react";
+import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock, CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ export function AppShell() {
   const logo = tenantLogo || settingsQ.data?.logo_url || defaultLogo;
   const isSuperadmin = !!accessQ.data?.isSuperadmin;
   const tenantStatus = accessQ.data?.tenant?.status ?? "ativo";
+  const licenseExpiresAt = accessQ.data?.tenant?.license_expires_at ?? null;
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -132,6 +133,7 @@ export function AppShell() {
             </Link>
           )}
         </nav>
+        {!isSuperadmin && <LicenseCountdown expiresAt={licenseExpiresAt} />}
         <button
           onClick={handleLogout}
           className="mt-auto flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent transition-colors"

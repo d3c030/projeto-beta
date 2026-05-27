@@ -1,11 +1,12 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock, CalendarClock } from "lucide-react";
+import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock, CalendarClock, MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getContactSettings } from "@/lib/settings.functions";
 import { getAccessState } from "@/lib/tenant.functions";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import defaultLogo from "@/assets/logo.png";
 
 function LicenseCountdown({ expiresAt }: { expiresAt: string | null }) {
@@ -61,6 +62,9 @@ const navItems = [
   { to: "/usuarios", label: "Usuários", icon: Shield },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
+
+const mobilePrimary = navItems.slice(0, 4); // Início, Atend., Agenda, Clientes
+const mobileSecondary = navItems.slice(4);  // Procedimentos, Custos, Usuários, Configurações
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -195,7 +199,7 @@ export function AppShell() {
         <img
           src={logo}
           alt="Logo"
-          className="h-14 w-auto"
+          className="h-10 w-auto"
         />
         <button
           onClick={handleLogout}
@@ -224,43 +228,95 @@ export function AppShell() {
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-        <div className={cn("grid", isSuperadmin && userEmail === "d3c030@gmail.com" ? "grid-cols-9" : "grid-cols-8")}>
-          {navItems.map(({ to, label, icon: Icon }) => {
-            const shortLabel =
-              label === "Atendimentos" ? "Atend." :
-              label === "Procedimentos" ? "Proc." :
-              label === "Usuários" ? "Usuár." :
-              label === "Configurações" ? "Config." :
-              label;
+        <div className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+          {mobilePrimary.map(({ to, label, icon: Icon }) => {
+            const shortLabel = label === "Atendimentos" ? "Atend." : label;
             return (
               <Link
                 key={to}
                 to={to}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors leading-tight",
+                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors leading-tight",
                   isActive(to) ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5" />
-                <span className="truncate max-w-full px-0.5">{shortLabel}</span>
+                <span className="truncate max-w-full px-1">{shortLabel}</span>
               </Link>
             );
           })}
-          {isSuperadmin && userEmail === "d3c030@gmail.com" && (
-            <Link
-              to="/master"
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors leading-tight",
-                isActive("/master") ? "text-amber-600 dark:text-amber-300" : "text-amber-700/80 dark:text-amber-300/80"
-              )}
-            >
-              <Crown className="h-5 w-5" />
-              <span className="truncate max-w-full px-0.5">Master</span>
-            </Link>
-          )}
+          <MoreMenu
+            isActive={isActive}
+            isSuperadmin={isSuperadmin}
+            userEmail={userEmail}
+          />
         </div>
       </nav>
 
     </div>
+  );
+}
+
+function MoreMenu({
+  isActive,
+  isSuperadmin,
+  userEmail,
+}: {
+  isActive: (to: string) => boolean;
+  isSuperadmin: boolean;
+  userEmail: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const anySecondaryActive = mobileSecondary.some((i) => isActive(i.to)) || isActive("/master");
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors leading-tight",
+            anySecondaryActive ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          <span>Mais</span>
+        </button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <SheetHeader className="text-left">
+          <SheetTitle>Mais opções</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {mobileSecondary.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card/60 px-2 py-4 text-xs font-medium transition-colors",
+                isActive(to) ? "border-primary/50 bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-center leading-tight">{label}</span>
+            </Link>
+          ))}
+          {isSuperadmin && userEmail === "d3c030@gmail.com" && (
+            <Link
+              to="/master"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-2 rounded-xl border px-2 py-4 text-xs font-medium transition-colors",
+                isActive("/master")
+                  ? "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                  : "border-amber-500/30 bg-amber-500/5 text-amber-700/90 dark:text-amber-300/90 hover:bg-amber-500/10"
+              )}
+            >
+              <Crown className="h-5 w-5" />
+              <span className="text-center leading-tight">Painel Master</span>
+            </Link>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcedimentosRouteImport } from './routes/procedimentos'
+import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CustosRouteImport } from './routes/custos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
@@ -19,6 +20,8 @@ import { Route as AtendimentosRouteImport } from './routes/atendimentos'
 import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MasterIndexRouteImport } from './routes/master.index'
+import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
 
 const UsuariosRoute = UsuariosRouteImport.update({
@@ -29,6 +32,11 @@ const UsuariosRoute = UsuariosRouteImport.update({
 const ProcedimentosRoute = ProcedimentosRouteImport.update({
   id: '/procedimentos',
   path: '/procedimentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterRoute = MasterRouteImport.update({
+  id: '/master',
+  path: '/master',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -71,6 +79,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterIndexRoute = MasterIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MasterRoute,
+} as any)
+const MasterClientesRoute = MasterClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => MasterRoute,
+} as any)
 const AgendarDateRoute = AgendarDateRouteImport.update({
   id: '/$date',
   path: '/$date',
@@ -86,9 +104,12 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
   '/login': typeof LoginRoute
+  '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
+  '/master/': typeof MasterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +123,8 @@ export interface FileRoutesByTo {
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
+  '/master': typeof MasterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,9 +136,12 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
   '/login': typeof LoginRoute
+  '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
+  '/master/': typeof MasterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,9 +154,12 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/custos'
     | '/login'
+    | '/master'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
+    | '/master/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +173,8 @@ export interface FileRouteTypes {
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
+    | '/master'
   id:
     | '__root__'
     | '/'
@@ -154,9 +185,12 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/custos'
     | '/login'
+    | '/master'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
+    | '/master/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -168,6 +202,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CustosRoute: typeof CustosRoute
   LoginRoute: typeof LoginRoute
+  MasterRoute: typeof MasterRouteWithChildren
   ProcedimentosRoute: typeof ProcedimentosRoute
   UsuariosRoute: typeof UsuariosRoute
 }
@@ -186,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/procedimentos'
       fullPath: '/procedimentos'
       preLoaderRoute: typeof ProcedimentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master': {
+      id: '/master'
+      path: '/master'
+      fullPath: '/master'
+      preLoaderRoute: typeof MasterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -244,6 +286,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master/': {
+      id: '/master/'
+      path: '/'
+      fullPath: '/master/'
+      preLoaderRoute: typeof MasterIndexRouteImport
+      parentRoute: typeof MasterRoute
+    }
+    '/master/clientes': {
+      id: '/master/clientes'
+      path: '/clientes'
+      fullPath: '/master/clientes'
+      preLoaderRoute: typeof MasterClientesRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/agendar/$date': {
       id: '/agendar/$date'
       path: '/$date'
@@ -265,6 +321,19 @@ const AgendarRouteChildren: AgendarRouteChildren = {
 const AgendarRouteWithChildren =
   AgendarRoute._addFileChildren(AgendarRouteChildren)
 
+interface MasterRouteChildren {
+  MasterClientesRoute: typeof MasterClientesRoute
+  MasterIndexRoute: typeof MasterIndexRoute
+}
+
+const MasterRouteChildren: MasterRouteChildren = {
+  MasterClientesRoute: MasterClientesRoute,
+  MasterIndexRoute: MasterIndexRoute,
+}
+
+const MasterRouteWithChildren =
+  MasterRoute._addFileChildren(MasterRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
@@ -274,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   CustosRoute: CustosRoute,
   LoginRoute: LoginRoute,
+  MasterRoute: MasterRouteWithChildren,
   ProcedimentosRoute: ProcedimentosRoute,
   UsuariosRoute: UsuariosRoute,
 }

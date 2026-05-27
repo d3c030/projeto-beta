@@ -21,6 +21,7 @@ import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterIndexRouteImport } from './routes/master.index'
+import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
 
 const UsuariosRoute = UsuariosRouteImport.update({
@@ -83,6 +84,11 @@ const MasterIndexRoute = MasterIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterClientesRoute = MasterClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => MasterRoute,
+} as any)
 const AgendarDateRoute = AgendarDateRouteImport.update({
   id: '/$date',
   path: '/$date',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
   '/master/': typeof MasterIndexRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
   '/master': typeof MasterIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
+  '/master/clientes': typeof MasterClientesRoute
   '/master/': typeof MasterIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
     | '/master/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
     | '/master'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
+    | '/master/clientes'
     | '/master/'
   fileRoutesById: FileRoutesById
 }
@@ -281,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterIndexRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/clientes': {
+      id: '/master/clientes'
+      path: '/clientes'
+      fullPath: '/master/clientes'
+      preLoaderRoute: typeof MasterClientesRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/agendar/$date': {
       id: '/agendar/$date'
       path: '/$date'
@@ -303,10 +322,12 @@ const AgendarRouteWithChildren =
   AgendarRoute._addFileChildren(AgendarRouteChildren)
 
 interface MasterRouteChildren {
+  MasterClientesRoute: typeof MasterClientesRoute
   MasterIndexRoute: typeof MasterIndexRoute
 }
 
 const MasterRouteChildren: MasterRouteChildren = {
+  MasterClientesRoute: MasterClientesRoute,
   MasterIndexRoute: MasterIndexRoute,
 }
 

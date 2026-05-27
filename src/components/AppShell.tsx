@@ -1,10 +1,11 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles } from "lucide-react";
+import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getContactSettings } from "@/lib/settings.functions";
+import { getAccessState } from "@/lib/tenant.functions";
 import defaultLogo from "@/assets/logo.png";
 
 const navItems = [
@@ -30,7 +31,15 @@ export function AppShell() {
     queryFn: () => getContactSettings(),
     enabled: authState === "in",
   });
-  const logo = settingsQ.data?.logo_url || defaultLogo;
+  const accessQ = useQuery({
+    queryKey: ["access-state"],
+    queryFn: () => getAccessState(),
+    enabled: authState === "in",
+  });
+  const tenantLogo = accessQ.data?.tenant?.logo_url;
+  const logo = tenantLogo || settingsQ.data?.logo_url || defaultLogo;
+  const isSuperadmin = !!accessQ.data?.isSuperadmin;
+  const tenantStatus = accessQ.data?.tenant?.status ?? "ativo";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -59,6 +68,29 @@ export function AppShell() {
     navigate({ to: "/login", replace: true });
   };
 
+  // Block suspended tenants entirely (superadmin bypasses)
+  if (!isSuperadmin && tenantStatus === "suspenso") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md w-full text-center space-y-4 border border-border rounded-2xl p-8 bg-card">
+          <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <Lock className="h-6 w-6 text-destructive" />
+          </div>
+          <h1 className="font-display text-xl">Acesso suspenso</h1>
+          <p className="text-sm text-muted-foreground">
+            Sua conta está temporariamente suspensa. Entre em contato com o suporte para regularizar e voltar a usar o painel.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            Sair
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
@@ -86,6 +118,15 @@ export function AppShell() {
               {label}
             </Link>
           ))}
+          {isSuperadmin && (
+            <Link
+              to="/master"
+              className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
+            >
+              <Crown className="h-4 w-4" />
+              Painel Master
+            </Link>
+          )}
         </nav>
         <button
           onClick={handleLogout}
@@ -116,6 +157,15 @@ export function AppShell() {
       {/* Main */}
       <main className="md:ml-64 pb-24 md:pb-10">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-6">
+          {!isSuperadmin && tenantStatus === "inadimplente" && (
+            <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Pagamento em atraso</p>
+                <p className="text-xs opacity-90">Sua mensalidade está pendente. Regularize para evitar a suspensão do acesso.</p>
+              </div>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

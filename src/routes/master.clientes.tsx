@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -101,7 +101,20 @@ function ClientesMaster() {
               <tr key={t.id} className="hover:bg-zinc-800/40">
                 <td className="px-4 py-3 font-medium text-zinc-100">{t.business_name}</td>
                 <td className="px-4 py-3 text-zinc-300">{t.owner_name || "—"}</td>
-                <td className="px-4 py-3 text-zinc-300">{t.whatsapp || "—"}</td>
+                <td className="px-4 py-3 text-zinc-300">
+                  <div className="flex flex-col gap-1">
+                    <span>{t.whatsapp || "—"}</span>
+                    <a
+                      href={`/t/${t.slug}/agendar`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-200"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      /t/{t.slug}
+                    </a>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-zinc-300">{t.plan_name}</td>
                 <td className="px-4 py-3 text-right text-zinc-300">{formatBRL(Number(t.monthly_price || 0))}</td>
                 <td className="px-4 py-3 text-center text-zinc-300">dia {t.due_day}</td>

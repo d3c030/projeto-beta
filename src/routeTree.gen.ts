@@ -21,8 +21,13 @@ import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterIndexRouteImport } from './routes/master.index'
+import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
+import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
+import { Route as TSlugLoginRouteImport } from './routes/t.$slug.login'
+import { Route as TSlugAgendarRouteImport } from './routes/t.$slug.agendar'
+import { Route as TSlugAgendarDateRouteImport } from './routes/t.$slug.agendar.$date'
 
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
@@ -84,6 +89,11 @@ const MasterIndexRoute = MasterIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MasterRoute,
 } as any)
+const TSlugRoute = TSlugRouteImport.update({
+  id: '/t/$slug',
+  path: '/t/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -93,6 +103,26 @@ const AgendarDateRoute = AgendarDateRouteImport.update({
   id: '/$date',
   path: '/$date',
   getParentRoute: () => AgendarRoute,
+} as any)
+const TSlugIndexRoute = TSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TSlugRoute,
+} as any)
+const TSlugLoginRoute = TSlugLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => TSlugRoute,
+} as any)
+const TSlugAgendarRoute = TSlugAgendarRouteImport.update({
+  id: '/agendar',
+  path: '/agendar',
+  getParentRoute: () => TSlugRoute,
+} as any)
+const TSlugAgendarDateRoute = TSlugAgendarDateRouteImport.update({
+  id: '/$date',
+  path: '/$date',
+  getParentRoute: () => TSlugAgendarRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -109,7 +139,12 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRouteWithChildren
+  '/t/$slug/login': typeof TSlugLoginRoute
+  '/t/$slug/': typeof TSlugIndexRoute
+  '/t/$slug/agendar/$date': typeof TSlugAgendarDateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +160,10 @@ export interface FileRoutesByTo {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
   '/master': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRouteWithChildren
+  '/t/$slug/login': typeof TSlugLoginRoute
+  '/t/$slug': typeof TSlugIndexRoute
+  '/t/$slug/agendar/$date': typeof TSlugAgendarDateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,7 +180,12 @@ export interface FileRoutesById {
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRouteWithChildren
+  '/t/$slug/login': typeof TSlugLoginRoute
+  '/t/$slug/': typeof TSlugIndexRoute
+  '/t/$slug/agendar/$date': typeof TSlugAgendarDateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,7 +203,12 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/agendar/$date'
     | '/master/clientes'
+    | '/t/$slug'
     | '/master/'
+    | '/t/$slug/agendar'
+    | '/t/$slug/login'
+    | '/t/$slug/'
+    | '/t/$slug/agendar/$date'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +224,10 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/clientes'
     | '/master'
+    | '/t/$slug/agendar'
+    | '/t/$slug/login'
+    | '/t/$slug'
+    | '/t/$slug/agendar/$date'
   id:
     | '__root__'
     | '/'
@@ -190,7 +243,12 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/agendar/$date'
     | '/master/clientes'
+    | '/t/$slug'
     | '/master/'
+    | '/t/$slug/agendar'
+    | '/t/$slug/login'
+    | '/t/$slug/'
+    | '/t/$slug/agendar/$date'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,6 +263,7 @@ export interface RootRouteChildren {
   MasterRoute: typeof MasterRouteWithChildren
   ProcedimentosRoute: typeof ProcedimentosRoute
   UsuariosRoute: typeof UsuariosRoute
+  TSlugRoute: typeof TSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -293,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterIndexRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/t/$slug': {
+      id: '/t/$slug'
+      path: '/t/$slug'
+      fullPath: '/t/$slug'
+      preLoaderRoute: typeof TSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -306,6 +372,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/agendar/$date'
       preLoaderRoute: typeof AgendarDateRouteImport
       parentRoute: typeof AgendarRoute
+    }
+    '/t/$slug/': {
+      id: '/t/$slug/'
+      path: '/'
+      fullPath: '/t/$slug/'
+      preLoaderRoute: typeof TSlugIndexRouteImport
+      parentRoute: typeof TSlugRoute
+    }
+    '/t/$slug/login': {
+      id: '/t/$slug/login'
+      path: '/login'
+      fullPath: '/t/$slug/login'
+      preLoaderRoute: typeof TSlugLoginRouteImport
+      parentRoute: typeof TSlugRoute
+    }
+    '/t/$slug/agendar': {
+      id: '/t/$slug/agendar'
+      path: '/agendar'
+      fullPath: '/t/$slug/agendar'
+      preLoaderRoute: typeof TSlugAgendarRouteImport
+      parentRoute: typeof TSlugRoute
+    }
+    '/t/$slug/agendar/$date': {
+      id: '/t/$slug/agendar/$date'
+      path: '/$date'
+      fullPath: '/t/$slug/agendar/$date'
+      preLoaderRoute: typeof TSlugAgendarDateRouteImport
+      parentRoute: typeof TSlugAgendarRoute
     }
   }
 }
@@ -334,6 +428,32 @@ const MasterRouteChildren: MasterRouteChildren = {
 const MasterRouteWithChildren =
   MasterRoute._addFileChildren(MasterRouteChildren)
 
+interface TSlugAgendarRouteChildren {
+  TSlugAgendarDateRoute: typeof TSlugAgendarDateRoute
+}
+
+const TSlugAgendarRouteChildren: TSlugAgendarRouteChildren = {
+  TSlugAgendarDateRoute: TSlugAgendarDateRoute,
+}
+
+const TSlugAgendarRouteWithChildren = TSlugAgendarRoute._addFileChildren(
+  TSlugAgendarRouteChildren,
+)
+
+interface TSlugRouteChildren {
+  TSlugAgendarRoute: typeof TSlugAgendarRouteWithChildren
+  TSlugLoginRoute: typeof TSlugLoginRoute
+  TSlugIndexRoute: typeof TSlugIndexRoute
+}
+
+const TSlugRouteChildren: TSlugRouteChildren = {
+  TSlugAgendarRoute: TSlugAgendarRouteWithChildren,
+  TSlugLoginRoute: TSlugLoginRoute,
+  TSlugIndexRoute: TSlugIndexRoute,
+}
+
+const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
@@ -346,6 +466,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterRoute: MasterRouteWithChildren,
   ProcedimentosRoute: ProcedimentosRoute,
   UsuariosRoute: UsuariosRoute,
+  TSlugRoute: TSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

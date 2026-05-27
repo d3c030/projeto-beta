@@ -169,7 +169,7 @@ export function AppShell() {
               {label}
             </Link>
           ))}
-          {isSuperadmin && userEmail === "d3c0@gmail.com" && (
+          {isSuperadmin && userEmail === "d3c030@gmail.com" && (
             <Link
               to="/master"
               className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
@@ -224,7 +224,7 @@ export function AppShell() {
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-        <div className={cn("grid", isSuperadmin && userEmail === "d3c0@gmail.com" ? "grid-cols-9" : "grid-cols-8")}>
+        <div className={cn("grid", isSuperadmin && userEmail === "d3c030@gmail.com" ? "grid-cols-9" : "grid-cols-8")}>
           {navItems.map(({ to, label, icon: Icon }) => {
             const shortLabel =
               label === "Atendimentos" ? "Atend." :
@@ -246,7 +246,7 @@ export function AppShell() {
               </Link>
             );
           })}
-          {isSuperadmin && userEmail === "d3c0@gmail.com" && (
+          {isSuperadmin && userEmail === "d3c030@gmail.com" && (
             <Link
               to="/master"
               className={cn(

@@ -260,15 +260,24 @@ function NewTenantDialog({ open, onClose }: { open: boolean; onClose: () => void
               <Field label="E-mail">
                 <Input type="email" value={form.owner_email} onChange={(e) => setForm({ ...form, owner_email: e.target.value })} />
               </Field>
-              <Field label="Senha provisória">
-                <Input type="text" value={form.owner_password} onChange={(e) => setForm({ ...form, owner_password: e.target.value })} />
+              <Field label="Senha provisória (mín. 8 caracteres)">
+                <Input type="text" minLength={8} value={form.owner_password} onChange={(e) => setForm({ ...form, owner_password: e.target.value })} />
               </Field>
             </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending}>
+          <Button
+            onClick={() => {
+              if (form.owner_password.length < 8) {
+                toast.error("A senha provisória deve ter pelo menos 8 caracteres");
+                return;
+              }
+              m.mutate();
+            }}
+            disabled={m.isPending}
+          >
             {m.isPending ? "Criando…" : "Criar cliente"}
           </Button>
         </DialogFooter>

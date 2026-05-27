@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { getContactSettings } from "@/lib/settings.functions";
 import defaultLogo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
@@ -18,6 +20,11 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const settingsQ = useQuery({
+    queryKey: ["public-contact-settings"],
+    queryFn: () => getContactSettings(),
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -41,7 +48,11 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm border-border/70 shadow-md">
         <CardHeader className="items-center text-center">
-          <img src={logo} alt="Studio Taiane Oliveira" className="h-20 w-auto mb-2" />
+          <img
+            src={settingsQ.data?.logo_url || defaultLogo}
+            alt="Studio Taiane Oliveira"
+            className="h-20 w-auto mb-2"
+          />
           <CardTitle className="font-display text-2xl">Entrar no painel</CardTitle>
         </CardHeader>
         <CardContent>

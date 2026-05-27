@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -10,6 +10,8 @@ import {
   createTenant,
   deleteTenant,
   updateTenant,
+  registerPayment,
+  listTenantPayments,
   type TenantStatus,
   type Tenant,
 } from "@/lib/tenant.functions";
@@ -63,6 +65,7 @@ function ClientesMaster() {
   });
 
   const [editing, setEditing] = useState<Tenant | null>(null);
+  const [payingTenant, setPayingTenant] = useState<Tenant | null>(null);
 
   return (
     <div className="space-y-6">
@@ -86,16 +89,17 @@ function ClientesMaster() {
               <th className="text-left px-4 py-3">Plano</th>
               <th className="text-right px-4 py-3">Valor</th>
               <th className="text-center px-4 py-3">Venc.</th>
+              <th className="text-center px-4 py-3">Licença</th>
               <th className="text-left px-4 py-3">Status</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {q.isLoading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-zinc-500">Carregando…</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-zinc-500">Carregando…</td></tr>
             )}
             {q.data?.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-zinc-500">Nenhum cliente ainda.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-zinc-500">Nenhum cliente ainda.</td></tr>
             )}
             {q.data?.map((t) => (
               <tr key={t.id} className="hover:bg-zinc-800/40">
@@ -118,6 +122,7 @@ function ClientesMaster() {
                 <td className="px-4 py-3 text-zinc-300">{t.plan_name}</td>
                 <td className="px-4 py-3 text-right text-zinc-300">{formatBRL(Number(t.monthly_price || 0))}</td>
                 <td className="px-4 py-3 text-center text-zinc-300">dia {t.due_day}</td>
+                <td className="px-4 py-3 text-center"><LicenseCell expiresAt={t.license_expires_at} /></td>
                 <td className="px-4 py-3">
                   <div className="inline-flex rounded-md border border-zinc-800 overflow-hidden">
                     {STATUS_OPTIONS.map((opt) => (
@@ -138,6 +143,13 @@ function ClientesMaster() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => setPayingTenant(t)}
+                    className="text-emerald-500 hover:text-emerald-300 mr-3"
+                    title="Registrar pagamento"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={() => setEditing(t)}
                     className="text-zinc-500 hover:text-zinc-100 mr-3"
@@ -164,7 +176,124 @@ function ClientesMaster() {
 
       <NewTenantDialog open={openNew} onClose={() => setOpenNew(false)} />
       <EditTenantDialog tenant={editing} onClose={() => setEditing(null)} />
+      <PaymentDialog tenant={payingTenant} onClose={() => setPayingTenant(null)} />
     </div>
+  );
+}
+
+function LicenseCell({ expiresAt }: { expiresAt: string | null }) {
+  if (!expiresAt) return <span className="text-[11px] text-zinc-500">—</span>;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [y, m, d] = expiresAt.split("-").map(Number);
+  const exp = new Date(y, m - 1, d);
+  const days = Math.ceil((exp.getTime() - today.getTime()) / 86400000);
+  const fmt = exp.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const cls = days < 0 ? "text-red-400" : days <= 5 ? "text-amber-400" : "text-emerald-400";
+  const lbl = days < 0 ? `vencida há ${Math.abs(days)}d` : days === 0 ? "vence hoje" : `${days}d`;
+  return (
+    <div className="flex flex-col items-center text-[11px]">
+      <span className={cls + " font-medium"}>{lbl}</span>
+      <span className="text-zinc-500">{fmt}</span>
+    </div>
+  );
+}
+
+function PaymentDialog({ tenant, onClose }: { tenant: Tenant | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const register = useServerFn(registerPayment);
+  const fetchPayments = useServerFn(listTenantPayments);
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState({ paid_at: today, amount: 0, payment_method: "PIX", notes: "" });
+
+  // Reset when tenant changes
+  const tid = tenant?.id ?? "";
+  const [lastTid, setLastTid] = useState("");
+  if (tenant && tid !== lastTid) {
+    setLastTid(tid);
+    setForm({ paid_at: today, amount: Number(tenant.monthly_price || 0), payment_method: "PIX", notes: "" });
+  }
+
+  const historyQ = useQuery({
+    queryKey: ["tenant-payments", tid],
+    queryFn: () => fetchPayments({ data: { tenant_id: tid } }),
+    enabled: !!tenant,
+  });
+
+  const m = useMutation({
+    mutationFn: () =>
+      register({
+        data: {
+          tenant_id: tenant!.id,
+          amount: Number(form.amount) || 0,
+          paid_at: form.paid_at,
+          payment_method: form.payment_method.trim(),
+          notes: form.notes.trim(),
+        },
+      }),
+    onSuccess: (r) => {
+      toast.success(`Licença estendida até ${new Date(r.new_expires_at + "T00:00:00").toLocaleDateString("pt-BR")}`);
+      qc.invalidateQueries({ queryKey: ["master-tenants"] });
+      qc.invalidateQueries({ queryKey: ["saas-metrics"] });
+      qc.invalidateQueries({ queryKey: ["tenant-payments", tid] });
+      qc.invalidateQueries({ queryKey: ["access-state"] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={!!tenant} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarClock className="h-4 w-4" />
+            Registrar pagamento — {tenant?.business_name}
+          </DialogTitle>
+        </DialogHeader>
+        {tenant && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+              <p>Vencimento atual: <strong>{tenant.license_expires_at ? new Date(tenant.license_expires_at + "T00:00:00").toLocaleDateString("pt-BR") : "—"}</strong></p>
+              <p className="text-muted-foreground mt-0.5">A licença será estendida em 1 mês a partir da data do pagamento (ou do vencimento atual, se ainda futuro).</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Data do pagamento">
+                <Input type="date" value={form.paid_at} onChange={(e) => setForm({ ...form, paid_at: e.target.value })} />
+              </Field>
+              <Field label="Valor (R$)">
+                <Input type="number" min={0} step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
+              </Field>
+            </div>
+            <Field label="Método">
+              <Input value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })} placeholder="PIX, Cartão, Dinheiro…" />
+            </Field>
+            <Field label="Observações">
+              <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </Field>
+
+            <div className="pt-3 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">Histórico</p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {historyQ.isLoading && <p className="text-xs text-muted-foreground">Carregando…</p>}
+                {historyQ.data?.length === 0 && <p className="text-xs text-muted-foreground">Nenhum pagamento registrado.</p>}
+                {historyQ.data?.map((p) => (
+                  <div key={p.id} className="flex justify-between text-xs border border-border rounded px-2 py-1.5">
+                    <span>{new Date(p.paid_at + "T00:00:00").toLocaleDateString("pt-BR")} · {p.payment_method || "—"}</span>
+                    <span className="font-medium">{formatBRL(Number(p.amount))}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending}>
+            {m.isPending ? "Registrando…" : "Registrar pagamento"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

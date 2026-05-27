@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock, CalendarClock, MoreHorizontal } from "lucide-react";
+import { Home, CalendarDays, Receipt, LogOut, Users, Shield, CalendarCheck, Settings, Sparkles, Crown, AlertTriangle, Lock, CalendarClock, MoreHorizontal, LifeBuoy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -60,6 +60,7 @@ const navItems = [
   { to: "/procedimentos", label: "Procedimentos", icon: Sparkles },
   { to: "/custos", label: "Custos", icon: Receipt },
   { to: "/usuarios", label: "Usuários", icon: Shield },
+  { to: "/ajuda", label: "Ajuda", icon: LifeBuoy },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 

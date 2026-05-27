@@ -17,6 +17,7 @@ import { Route as CustosRouteImport } from './routes/custos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AtendimentosRouteImport } from './routes/atendimentos'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -68,6 +69,11 @@ const ClientesRoute = ClientesRouteImport.update({
 const AtendimentosRoute = AtendimentosRouteImport.update({
   id: '/atendimentos',
   path: '/atendimentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendarRoute = AgendarRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/agendar': typeof AgendarRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/atendimentos': typeof AtendimentosRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/agendar': typeof AgendarRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/atendimentos': typeof AtendimentosRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/agendar': typeof AgendarRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/atendimentos': typeof AtendimentosRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/agendar'
+    | '/ajuda'
     | '/atendimentos'
     | '/clientes'
     | '/configuracoes'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/agendar'
+    | '/ajuda'
     | '/atendimentos'
     | '/clientes'
     | '/configuracoes'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/agendar'
+    | '/ajuda'
     | '/atendimentos'
     | '/clientes'
     | '/configuracoes'
@@ -267,6 +279,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   AgendarRoute: typeof AgendarRouteWithChildren
+  AjudaRoute: typeof AjudaRoute
   AtendimentosRoute: typeof AtendimentosRoute
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -334,6 +347,13 @@ declare module '@tanstack/react-router' {
       path: '/atendimentos'
       fullPath: '/atendimentos'
       preLoaderRoute: typeof AtendimentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agendar': {
@@ -479,6 +499,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   AgendarRoute: AgendarRouteWithChildren,
+  AjudaRoute: AjudaRoute,
   AtendimentosRoute: AtendimentosRoute,
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,

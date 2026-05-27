@@ -70,6 +70,8 @@ function Dashboard() {
   const [monthIdx, setMonthIdx] = useState(now.getMonth());
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutAppt, setCheckoutAppt] = useState<Appointment | null>(null);
   const qc = useQueryClient();
@@ -102,6 +104,7 @@ function Dashboard() {
     qc.invalidateQueries({ queryKey: ["procedures"] });
     qc.invalidateQueries({ queryKey: ["clients"] });
     qc.invalidateQueries({ queryKey: ["receivables"] });
+    qc.invalidateQueries({ queryKey: ["expenses"] });
   };
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
@@ -163,6 +166,7 @@ function Dashboard() {
   const dailyData = useMemo(() => {
     const sums = new Array(daysInMonth).fill(0) as number[];
     const counts = new Array(daysInMonth).fill(0) as number[];
+    const costs = new Array(daysInMonth).fill(0) as number[];
     (apptsQ.data ?? []).forEach((a) => {
       // a.date is "YYYY-MM-DD"
       const d = Number(String(a.date).slice(8, 10));
@@ -171,15 +175,22 @@ function Dashboard() {
         counts[d - 1] += 1;
       }
     });
+    (expQ.data ?? []).forEach((e) => {
+      const d = Number(String(e.date).slice(8, 10));
+      if (d >= 1 && d <= daysInMonth) {
+        costs[d - 1] += Number(e.total || 0);
+      }
+    });
     return sums.map((v, i) => ({
       day: i + 1,
       label: String(i + 1).padStart(2, "0"),
       value: v,
       count: counts[i],
+      cost: costs[i],
       isToday: isCurrentMonth && i + 1 === todayDay,
       isFuture: isCurrentMonth && i + 1 > todayDay,
     }));
-  }, [apptsQ.data, daysInMonth, isCurrentMonth, todayDay]);
+  }, [apptsQ.data, expQ.data, daysInMonth, isCurrentMonth, todayDay]);
 
   const bestDay = useMemo(() => {
     const ranked = [...dailyData].filter((d) => d.value > 0)
@@ -206,7 +217,15 @@ function Dashboard() {
             onClick={() => { setEditing(null); setDialogOpen(true); }}
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Novo
+            Atendimento
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setEditingExpense(null); setExpenseDialogOpen(true); }}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Custo
           </Button>
         </div>
       </div>

@@ -2,14 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
   updateTenantStatus,
   createTenant,
   deleteTenant,
+  updateTenant,
   type TenantStatus,
+  type Tenant,
 } from "@/lib/tenant.functions";
 import { formatBRL } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,8 @@ function ClientesMaster() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const [editing, setEditing] = useState<Tenant | null>(null);
 
   return (
     <div className="space-y-6">
@@ -122,6 +126,13 @@ function ClientesMaster() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
+                    onClick={() => setEditing(t)}
+                    className="text-zinc-500 hover:text-zinc-100 mr-3"
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => {
                       if (confirm(`Excluir ${t.business_name}? Todos os dados deste tenant serão removidos.`))
                         delM.mutate(t.id);
@@ -139,6 +150,7 @@ function ClientesMaster() {
       </div>
 
       <NewTenantDialog open={openNew} onClose={() => setOpenNew(false)} />
+      <EditTenantDialog tenant={editing} onClose={() => setEditing(null)} />
     </div>
   );
 }
@@ -260,4 +272,135 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
+}
+
+function EditTenantDialog({ tenant, onClose }: { tenant: Tenant | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const update = useServerFn(updateTenant);
+  const [form, setForm] = useState(() => toForm(tenant));
+
+  // Reset form when tenant changes
+  if (tenant && form._id !== tenant.id) {
+    setForm(toForm(tenant));
+  }
+
+  const m = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          id: tenant!.id,
+          patch: {
+            business_name: form.business_name.trim(),
+            owner_name: form.owner_name.trim(),
+            whatsapp: form.whatsapp.replace(/\D/g, ""),
+            slug: form.slug.trim().toLowerCase(),
+            plan_name: form.plan_name.trim() || "Básico",
+            monthly_price: Number(form.monthly_price) || 0,
+            due_day: Math.max(1, Math.min(31, Number(form.due_day) || 10)),
+            primary_color: form.primary_color.trim(),
+            logo_url: form.logo_url.trim(),
+            instagram_url: form.instagram_url.trim(),
+            pix_key: form.pix_key.trim(),
+            pix_copia_cola: form.pix_copia_cola.trim(),
+            pix_qr_url: form.pix_qr_url.trim(),
+          },
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cliente atualizado");
+      qc.invalidateQueries({ queryKey: ["master-tenants"] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={!!tenant} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Editar cliente</DialogTitle>
+        </DialogHeader>
+        {tenant && (
+          <div className="space-y-3">
+            <Field label="Nome do negócio">
+              <Input value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Responsável">
+                <Input value={form.owner_name} onChange={(e) => setForm({ ...form, owner_name: e.target.value })} />
+              </Field>
+              <Field label="WhatsApp">
+                <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value.replace(/\D/g, "") })} />
+              </Field>
+            </div>
+            <Field label="Slug">
+              <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+            </Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Plano">
+                <Input value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })} />
+              </Field>
+              <Field label="Mensalidade (R$)">
+                <Input type="number" min={0} step="0.01" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: Number(e.target.value) })} />
+              </Field>
+              <Field label="Dia venc.">
+                <Input type="number" min={1} max={31} value={form.due_day} onChange={(e) => setForm({ ...form, due_day: Number(e.target.value) })} />
+              </Field>
+            </div>
+            <div className="pt-3 border-t border-border space-y-3">
+              <p className="text-xs text-muted-foreground">White-label</p>
+              <Field label="URL do logo">
+                <Input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Cor principal (hex)">
+                  <Input value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} placeholder="#000000" />
+                </Field>
+                <Field label="Instagram">
+                  <Input value={form.instagram_url} onChange={(e) => setForm({ ...form, instagram_url: e.target.value })} placeholder="https://instagram.com/..." />
+                </Field>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-border space-y-3">
+              <p className="text-xs text-muted-foreground">PIX</p>
+              <Field label="Chave PIX">
+                <Input value={form.pix_key} onChange={(e) => setForm({ ...form, pix_key: e.target.value })} />
+              </Field>
+              <Field label="PIX Copia & Cola">
+                <Input value={form.pix_copia_cola} onChange={(e) => setForm({ ...form, pix_copia_cola: e.target.value })} />
+              </Field>
+              <Field label="URL do QR Code">
+                <Input value={form.pix_qr_url} onChange={(e) => setForm({ ...form, pix_qr_url: e.target.value })} />
+              </Field>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending}>
+            {m.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function toForm(t: Tenant | null) {
+  return {
+    _id: t?.id ?? "",
+    business_name: t?.business_name ?? "",
+    owner_name: t?.owner_name ?? "",
+    whatsapp: t?.whatsapp ?? "",
+    slug: t?.slug ?? "",
+    plan_name: t?.plan_name ?? "Básico",
+    monthly_price: Number(t?.monthly_price ?? 0),
+    due_day: Number(t?.due_day ?? 10),
+    primary_color: t?.primary_color ?? "",
+    logo_url: t?.logo_url ?? "",
+    instagram_url: t?.instagram_url ?? "",
+    pix_key: t?.pix_key ?? "",
+    pix_copia_cola: t?.pix_copia_cola ?? "",
+    pix_qr_url: t?.pix_qr_url ?? "",
+  };
 }

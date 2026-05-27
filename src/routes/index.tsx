@@ -3,12 +3,13 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+  ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
 import {
   fetchAppointments, fetchExpenses, fetchUpcomingAppointments,
-  fetchDistinctProcedures, updateAppointment, updateAppointmentStatus,
+  fetchDistinctProcedures, createAppointment, updateAppointment, updateAppointmentStatus,
   deleteAppointment, fetchReceivables, APPOINTMENT_STATUS_LABEL,
+  createExpense, updateExpense, deleteExpense, type Expense,
   type Appointment, type AppointmentStatus,
 } from "@/lib/data";
 import { formatBRL, formatDateBR, PAYMENT_METHODS } from "@/lib/format";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppointmentDialog } from "@/components/AppointmentDialog";
+import { ExpenseDialog } from "@/components/ExpenseDialog";
 import { CheckoutSheet } from "@/components/CheckoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

@@ -286,6 +286,30 @@ export type Database = {
           },
         ]
       }
+      help_videos: {
+        Row: {
+          created_at: string
+          topic_id: string
+          updated_at: string
+          updated_by: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          topic_id: string
+          updated_at?: string
+          updated_by?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          topic_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           created_at: string

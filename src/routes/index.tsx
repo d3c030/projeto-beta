@@ -609,10 +609,14 @@ function Dashboard() {
         initial={editing}
         procedureSuggestions={procsQ.data}
         onSubmit={async (data) => {
-          if (!editing) return;
           try {
-            await updateAppointment(editing.id, data);
-            toast.success("Atendimento atualizado");
+            if (editing) {
+              await updateAppointment(editing.id, data);
+              toast.success("Atendimento atualizado");
+            } else {
+              await createAppointment(data);
+              toast.success("Atendimento criado");
+            }
             invalidateAll();
           } catch (e) {
             toast.error("Erro ao guardar");

@@ -8,6 +8,49 @@ import { getContactSettings } from "@/lib/settings.functions";
 import { getAccessState } from "@/lib/tenant.functions";
 import defaultLogo from "@/assets/logo.png";
 
+function LicenseCountdown({ expiresAt }: { expiresAt: string | null }) {
+  if (!expiresAt) {
+    return (
+      <div className="mt-4 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-xs">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <CalendarClock className="h-3.5 w-3.5" />
+          <span>Licença</span>
+        </div>
+        <p className="mt-1 text-muted-foreground/80">Aguardando 1º pagamento</p>
+      </div>
+    );
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [y, m, d] = expiresAt.split("-").map(Number);
+  const exp = new Date(y, m - 1, d);
+  const days = Math.ceil((exp.getTime() - today.getTime()) / 86400000);
+  const expired = days < 0;
+  const warn = days <= 5;
+  const tone = expired
+    ? "border-destructive/40 bg-destructive/10 text-destructive"
+    : warn
+      ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+      : "border-border bg-card/50 text-foreground";
+  const fmt = exp.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return (
+    <div className={cn("mt-4 rounded-lg border px-3 py-2.5 text-xs", tone)}>
+      <div className="flex items-center gap-2 opacity-80">
+        <CalendarClock className="h-3.5 w-3.5" />
+        <span>Licença</span>
+      </div>
+      <p className="mt-1 font-medium">
+        {expired
+          ? `Vencida há ${Math.abs(days)} ${Math.abs(days) === 1 ? "dia" : "dias"}`
+          : days === 0
+            ? "Vence hoje"
+            : `${days} ${days === 1 ? "dia" : "dias"} restantes`}
+      </p>
+      <p className="opacity-70 mt-0.5">Venc.: {fmt}</p>
+    </div>
+  );
+}
+
 const navItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/atendimentos", label: "Atendimentos", icon: CalendarDays },

@@ -26,6 +26,7 @@ import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugLoginRouteImport } from './routes/t.$slug.login'
+import { Route as TSlugAgendarRouteImport } from './routes/t.$slug.agendar'
 
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
@@ -112,6 +113,11 @@ const TSlugLoginRoute = TSlugLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugAgendarRoute = TSlugAgendarRouteImport.update({
+  id: '/agendar',
+  path: '/agendar',
+  getParentRoute: () => TSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/master/clientes': typeof MasterClientesRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRoute
   '/t/$slug/login': typeof TSlugLoginRoute
   '/t/$slug/': typeof TSlugIndexRoute
 }
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
   '/master': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRoute
   '/t/$slug/login': typeof TSlugLoginRoute
   '/t/$slug': typeof TSlugIndexRoute
 }
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/master/clientes': typeof MasterClientesRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/agendar': typeof TSlugAgendarRoute
   '/t/$slug/login': typeof TSlugLoginRoute
   '/t/$slug/': typeof TSlugIndexRoute
 }
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/master/clientes'
     | '/t/$slug'
     | '/master/'
+    | '/t/$slug/agendar'
     | '/t/$slug/login'
     | '/t/$slug/'
   fileRoutesByTo: FileRoutesByTo
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/clientes'
     | '/master'
+    | '/t/$slug/agendar'
     | '/t/$slug/login'
     | '/t/$slug'
   id:
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/master/clientes'
     | '/t/$slug'
     | '/master/'
+    | '/t/$slug/agendar'
     | '/t/$slug/login'
     | '/t/$slug/'
   fileRoutesById: FileRoutesById
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLoginRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/agendar': {
+      id: '/t/$slug/agendar'
+      path: '/agendar'
+      fullPath: '/t/$slug/agendar'
+      preLoaderRoute: typeof TSlugAgendarRouteImport
+      parentRoute: typeof TSlugRoute
+    }
   }
 }
 
@@ -391,11 +410,13 @@ const MasterRouteWithChildren =
   MasterRoute._addFileChildren(MasterRouteChildren)
 
 interface TSlugRouteChildren {
+  TSlugAgendarRoute: typeof TSlugAgendarRoute
   TSlugLoginRoute: typeof TSlugLoginRoute
   TSlugIndexRoute: typeof TSlugIndexRoute
 }
 
 const TSlugRouteChildren: TSlugRouteChildren = {
+  TSlugAgendarRoute: TSlugAgendarRoute,
   TSlugLoginRoute: TSlugLoginRoute,
   TSlugIndexRoute: TSlugIndexRoute,
 }
@@ -419,3 +440,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

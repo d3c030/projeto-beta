@@ -22,6 +22,8 @@ export type Tenant = {
   pix_key: string;
   pix_copia_cola: string;
   pix_qr_url: string;
+  license_expires_at: string | null;
+  last_payment_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -188,6 +190,110 @@ export const deleteTenant = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("tenants").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export type TenantPayment = {
+  id: string;
+  tenant_id: string;
+  amount: number;
+  paid_at: string;
+  payment_method: string | null;
+  notes: string | null;
+  previous_expires_at: string | null;
+  new_expires_at: string;
+  created_at: string;
+};
+
+function addOneMonth(isoDate: string): string {
+  // isoDate: YYYY-MM-DD. Returns same-day next month, clamped to last day if needed.
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const next = new Date(Date.UTC(y, m, 1)); // first day of next month
+  const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const day = Math.min(d, lastDay);
+  next.setUTCDate(day);
+  return next.toISOString().slice(0, 10);
+}
+
+export const registerPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        tenant_id: z.string().uuid(),
+        amount: z.number().min(0).max(1_000_000),
+        paid_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        payment_method: z.string().trim().max(50).optional().default(""),
+        notes: z.string().trim().max(500).optional().default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+
+    const { data: t, error: tErr } = await supabaseAdmin
+      .from("tenants")
+      .select("license_expires_at")
+      .eq("id", data.tenant_id)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!t) throw new Error("Tenant não encontrado");
+
+    const prev = (t as { license_expires_at: string | null }).license_expires_at;
+    // Extend from the later of (current expiry, paid_at) so paying early stacks correctly
+    const base = prev && prev > data.paid_at ? prev : data.paid_at;
+    const newExpires = addOneMonth(base);
+
+    const { error: insErr } = await supabaseAdmin.from("tenant_payments").insert({
+      tenant_id: data.tenant_id,
+      amount: data.amount,
+      paid_at: data.paid_at,
+      payment_method: data.payment_method || null,
+      notes: data.notes || null,
+      previous_expires_at: prev,
+      new_expires_at: newExpires,
+      created_by: context.userId,
+    });
+    if (insErr) throw new Error(insErr.message);
+
+    const { error: updErr } = await supabaseAdmin
+      .from("tenants")
+      .update({
+        license_expires_at: newExpires,
+        last_payment_at: data.paid_at,
+        status: "ativo",
+      })
+      .eq("id", data.tenant_id);
+    if (updErr) throw new Error(updErr.message);
+
+    return { ok: true, new_expires_at: newExpires };
+  });
+
+export const listTenantPayments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ tenant_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<TenantPayment[]> => {
+    // Superadmin or owner of this tenant
+    const isAdmin = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "superadmin")
+      .maybeSingle();
+    if (!isAdmin.data) {
+      const prof = await supabaseAdmin
+        .from("profiles")
+        .select("tenant_id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (prof.data?.tenant_id !== data.tenant_id) throw new Error("Acesso negado");
+    }
+    const { data: rows, error } = await supabaseAdmin
+      .from("tenant_payments")
+      .select("*")
+      .eq("tenant_id", data.tenant_id)
+      .order("paid_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as TenantPayment[];
   });
 
 export const getSaasMetrics = createServerFn({ method: "GET" })

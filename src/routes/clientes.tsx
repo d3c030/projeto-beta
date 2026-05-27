@@ -99,6 +99,12 @@ function ClientsPage() {
                       <span>·</span>
                     </>
                   )}
+                  {client.email && (
+                    <>
+                      <Mail className="h-3 w-3" /> <span className="truncate">{client.email}</span>
+                      <span>·</span>
+                    </>
+                  )}
                   <span>
                     {visits} visita{visits === 1 ? "" : "s"}
                   </span>

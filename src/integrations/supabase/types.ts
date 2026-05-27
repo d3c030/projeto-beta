@@ -30,7 +30,7 @@ export type Database = {
           id?: string
           is_open: boolean
           note?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -71,7 +71,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string
           payment_method?: string | null
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           amount?: number
@@ -123,7 +123,7 @@ export type Database = {
           procedure?: string | null
           status?: string
           subtotal?: number
-          tenant_id: string
+          tenant_id?: string
           time?: string | null
         }
         Update: {
@@ -177,7 +177,7 @@ export type Database = {
           normalized_name: string
           notes?: string | null
           phone?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -260,7 +260,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           quantity?: number
-          tenant_id: string
+          tenant_id?: string
           total?: number
           unit_price?: number
         }
@@ -304,7 +304,7 @@ export type Database = {
           id?: string
           name: string
           sort_order?: number
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {

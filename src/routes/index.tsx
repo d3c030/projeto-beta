@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus } from "lucide-react";
 import {
@@ -772,13 +772,31 @@ function ReceivableDialog({
   const [paid, setPaid] = useState("");
   const [method, setMethod] = useState<string>("Pix");
   const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState<Array<{
+    id: string;
+    amount: number;
+    payment_method: string | null;
+    paid_at: string;
+    notes: string | null;
+  }>>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
-  useMemo(() => {
-    if (appointment) {
-      setAmount(String(Number(appointment.amount || 0).toFixed(2)));
-      setPaid("");
-      setMethod("Pix");
-    }
+  useEffect(() => {
+    if (!appointment) return;
+    setAmount(String(Number(appointment.amount || 0).toFixed(2)));
+    setPaid("");
+    setMethod("Pix");
+    setLoadingHistory(true);
+    supabase
+      .from("appointment_payments")
+      .select("id, amount, payment_method, paid_at, notes")
+      .eq("appointment_id", appointment.id)
+      .order("paid_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setHistory((data as typeof history) ?? []);
+        setLoadingHistory(false);
+      });
   }, [appointment]);
 
   if (!appointment) {
@@ -819,12 +837,19 @@ function ReceivableDialog({
     }
     setSaving(true);
     try {
+      // 1) registra o pagamento no histórico
+      const { error: payErr } = await supabase.from("appointment_payments").insert({
+        appointment_id: appointment.id,
+        amount: parsedPaid,
+        payment_method: method,
+      });
+      if (payErr) throw payErr;
+
       if (willClose) {
-        // fully paid → mark as concluído with the chosen method
         const { error } = await supabase
           .from("appointments")
           .update({
-            amount: parsedAmount,
+            amount: 0,
             payment_method: method,
             status: "concluido",
           })
@@ -832,7 +857,6 @@ function ReceivableDialog({
         if (error) throw error;
         toast.success("Pagamento registrado e quitado");
       } else {
-        // partial → reduce remaining balance, keep as A Receber
         const { error } = await supabase
           .from("appointments")
           .update({ amount: remaining })
@@ -849,6 +873,8 @@ function ReceivableDialog({
     }
   };
 
+  const totalPagoHist = history.reduce((s, h) => s + Number(h.amount || 0), 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -861,14 +887,14 @@ function ReceivableDialog({
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="rcv-amount">Valor devido</Label>
+            <Label htmlFor="rcv-amount">Saldo devedor</Label>
             <Input
               id="rcv-amount"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">Edite caso precise corrigir o valor total.</p>
+            <p className="text-xs text-muted-foreground">Valor pendente atual — edite só para corrigir o saldo.</p>
           </div>
 
           <div className="border-t border-border/70 pt-4 grid gap-3">
@@ -907,6 +933,34 @@ function ReceivableDialog({
                   {willClose ? formatBRL(parsedPaid) : formatBRL(remaining)}
                 </span>
               </div>
+            )}
+          </div>
+
+          <div className="border-t border-border/70 pt-4 grid gap-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">Histórico de pagamentos</div>
+              {history.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Total pago: <span className="font-medium text-foreground tabular-nums">{formatBRL(totalPagoHist)}</span>
+                </span>
+              )}
+            </div>
+            {loadingHistory ? (
+              <p className="text-xs text-muted-foreground py-2">Carregando…</p>
+            ) : history.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Nenhum pagamento registrado ainda.</p>
+            ) : (
+              <ul className="divide-y divide-border/70 rounded-md border border-border/70 bg-secondary/30">
+                {history.map((h) => (
+                  <li key={h.id} className="px-3 py-2 flex items-center justify-between text-xs">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground">{formatDateBR(h.paid_at)}</span>
+                      <span className="text-muted-foreground">{h.payment_method ?? "—"}</span>
+                    </div>
+                    <span className="font-semibold tabular-nums">{formatBRL(Number(h.amount))}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

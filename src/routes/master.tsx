@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useRouterState, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users2, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users2, Activity, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAccessState } from "@/lib/tenant.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/master")({
 const items = [
   { to: "/master", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/master/clientes", label: "Clientes", icon: Users2, exact: false },
+  { to: "/master/acessos", label: "Acessos", icon: Activity, exact: false },
 ] as const;
 
 function MasterLayout() {
@@ -72,7 +73,7 @@ function MasterLayout() {
         </div>
       </main>
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-zinc-800 bg-zinc-900">
-        <div className="grid grid-cols-2">
+        <div className="grid grid-cols-3">
           {items.map(({ to, label, icon: Icon, exact }) => (
             <Link
               key={to}

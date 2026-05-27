@@ -345,3 +345,108 @@ export const getSaasMetrics = createServerFn({ method: "GET" })
       growth: months,
     };
   });
+
+export type AccessReportRow = {
+  user_id: string;
+  email: string;
+  display_name: string;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  tenant_slug: string | null;
+  roles: string[];
+  created_at: string;
+  last_sign_in_at: string | null;
+  sign_in_count: number;
+};
+
+export const listAccessReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AccessReportRow[]> => {
+    await assertSuperadmin(context.userId);
+
+    // Fetch all auth users (paginated)
+    const allUsers: Array<{
+      id: string;
+      email?: string | null;
+      created_at: string;
+      last_sign_in_at?: string | null;
+      user_metadata?: Record<string, unknown> | null;
+    }> = [];
+    let page = 1;
+    const perPage = 200;
+    // Hard cap to avoid runaway loops
+    for (let i = 0; i < 25; i++) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+      if (error) throw new Error(error.message);
+      const users = data?.users ?? [];
+      allUsers.push(...users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at,
+        user_metadata: u.user_metadata,
+      })));
+      if (users.length < perPage) break;
+      page++;
+    }
+
+    const ids = allUsers.map((u) => u.id);
+    if (ids.length === 0) return [];
+
+    const [profilesRes, rolesRes, tenantsRes] = await Promise.all([
+      supabaseAdmin.from("profiles").select("user_id, display_name, tenant_id").in("user_id", ids),
+      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
+      supabaseAdmin.from("tenants").select("id, business_name, slug"),
+    ]);
+    if (profilesRes.error) throw new Error(profilesRes.error.message);
+    if (rolesRes.error) throw new Error(rolesRes.error.message);
+    if (tenantsRes.error) throw new Error(tenantsRes.error.message);
+
+    const profileById = new Map<string, { display_name: string; tenant_id: string | null }>();
+    for (const p of profilesRes.data ?? []) {
+      profileById.set(p.user_id as string, {
+        display_name: (p.display_name as string) ?? "",
+        tenant_id: (p.tenant_id as string | null) ?? null,
+      });
+    }
+    const rolesByUser = new Map<string, string[]>();
+    for (const r of rolesRes.data ?? []) {
+      const arr = rolesByUser.get(r.user_id as string) ?? [];
+      arr.push(r.role as string);
+      rolesByUser.set(r.user_id as string, arr);
+    }
+    const tenantById = new Map<string, { name: string; slug: string }>();
+    for (const t of tenantsRes.data ?? []) {
+      tenantById.set(t.id as string, {
+        name: (t.business_name as string) ?? "",
+        slug: (t.slug as string) ?? "",
+      });
+    }
+
+    const rows: AccessReportRow[] = allUsers.map((u) => {
+      const prof = profileById.get(u.id);
+      const tenant = prof?.tenant_id ? tenantById.get(prof.tenant_id) : undefined;
+      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+      const signInCount = Number(meta["sign_in_count"] ?? 0) || 0;
+      return {
+        user_id: u.id,
+        email: u.email ?? "",
+        display_name: prof?.display_name ?? "",
+        tenant_id: prof?.tenant_id ?? null,
+        tenant_name: tenant?.name ?? null,
+        tenant_slug: tenant?.slug ?? null,
+        roles: rolesByUser.get(u.id) ?? [],
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        sign_in_count: signInCount,
+      };
+    });
+
+    rows.sort((a, b) => {
+      const ta = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0;
+      const tb = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0;
+      return tb - ta;
+    });
+
+    return rows;
+  });

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronRight, Users, Phone } from "lucide-react";
+import { Search, ChevronRight, Users, Phone, Mail } from "lucide-react";
 import {
   fetchClientsWithStats,
   fetchClientHistory,
@@ -46,7 +46,8 @@ function ClientsPage() {
     return list.filter(
       (s) =>
         norm(s.client.name).includes(q) ||
-        norm(s.client.phone ?? "").includes(q)
+        norm(s.client.phone ?? "").includes(q) ||
+        norm(s.client.email ?? "").includes(q)
     );
   }, [listQ.data, search]);
 
@@ -66,7 +67,7 @@ function ClientsPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Procurar cliente por nome ou telefone"
+          placeholder="Procurar por nome, telefone ou email"
           className="pl-9 bg-card"
         />
       </div>
@@ -95,6 +96,12 @@ function ClientsPage() {
                   {client.phone && (
                     <>
                       <Phone className="h-3 w-3" /> {client.phone}
+                      <span>·</span>
+                    </>
+                  )}
+                  {client.email && (
+                    <>
+                      <Mail className="h-3 w-3" /> <span className="truncate">{client.email}</span>
                       <span>·</span>
                     </>
                   )}
@@ -137,6 +144,7 @@ function ClientDetailDialog({
   const open = !!client;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -150,6 +158,7 @@ function ClientDetailDialog({
   useMemo(() => {
     setName(client?.name ?? "");
     setPhone(client?.phone ?? "");
+    setEmail(client?.email ?? "");
     setNotes(client?.notes ?? "");
   }, [client]);
 
@@ -168,11 +177,17 @@ function ClientDetailDialog({
 
   const save = async () => {
     if (!name.trim()) return;
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error("Email inválido");
+      return;
+    }
     setSaving(true);
     try {
       await updateClient(client.id, {
         name: name.trim(),
         phone: phone.trim() || null,
+        email: trimmedEmail || null,
         notes: notes.trim() || null,
       });
       toast.success("Cliente atualizado");
@@ -223,6 +238,17 @@ function ClientDetailDialog({
                 placeholder="(11) 99999-9999"
               />
             </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="c-email">Email</Label>
+            <Input
+              id="c-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="cliente@email.com"
+              maxLength={255}
+            />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="c-notes">Observações</Label>

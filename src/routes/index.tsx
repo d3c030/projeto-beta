@@ -602,6 +602,82 @@ function Dashboard() {
         onSaved={invalidateAll}
       />
 
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingDown className="h-4 w-4 text-destructive" />
+            Custos do mês
+          </CardTitle>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              Total: <span className="font-medium text-foreground tabular-nums">{formatBRL(custos)}</span>
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              onClick={() => { setEditingExpense(null); setExpenseDialogOpen(true); }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Novo
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {expQ.isLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Carregando…</p>
+          ) : (expQ.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Nenhum custo registrado neste mês.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/70 text-left text-xs uppercase text-muted-foreground">
+                    <th className="py-2 font-medium w-24">Data</th>
+                    <th className="py-2 font-medium">Descrição</th>
+                    <th className="py-2 font-medium text-right w-20">Qtd</th>
+                    <th className="py-2 font-medium text-right w-28">Unit.</th>
+                    <th className="py-2 font-medium text-right w-28">Total</th>
+                    <th className="py-2 font-medium w-28">Pagamento</th>
+                    <th className="py-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/70">
+                  {(expQ.data ?? []).map((e) => (
+                    <tr key={e.id}>
+                      <td className="py-2.5 tabular-nums text-muted-foreground">{formatDateBR(e.date)}</td>
+                      <td className="py-2.5">{e.description}</td>
+                      <td className="py-2.5 text-right tabular-nums">{Number(e.quantity)}</td>
+                      <td className="py-2.5 text-right tabular-nums">{formatBRL(Number(e.unit_price))}</td>
+                      <td className="py-2.5 text-right tabular-nums font-medium">{formatBRL(Number(e.total))}</td>
+                      <td className="py-2.5 text-muted-foreground">{e.payment_method ?? "—"}</td>
+                      <td className="py-2.5 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Editar"
+                          onClick={() => { setEditingExpense(e); setExpenseDialogOpen(true); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-border font-medium">
+                    <td className="py-2.5" colSpan={4}>Total</td>
+                    <td className="py-2.5 text-right tabular-nums">{formatBRL(custos)}</td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <AppointmentDialog
         open={dialogOpen}

@@ -68,6 +68,7 @@ export function AppShell() {
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
   const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const settingsQ = useQuery({
     queryKey: ["public-contact-settings"],
@@ -88,9 +89,11 @@ export function AppShell() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthState(session ? "in" : "out");
+      setUserEmail(session?.user?.email ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setAuthState(data.session ? "in" : "out");
+      setUserEmail(data.session?.user?.email ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -166,7 +169,7 @@ export function AppShell() {
               {label}
             </Link>
           ))}
-          {isSuperadmin && (
+          {isSuperadmin && userEmail === "d3c0@gmail.com" && (
             <Link
               to="/master"
               className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"

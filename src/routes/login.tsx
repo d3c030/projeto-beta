@@ -38,11 +38,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm border-border/70 shadow-md">
+    <div className="theme-preto min-h-screen flex items-center justify-center bg-background text-foreground px-4">
+      <Card className="w-full max-w-sm border-border/70 shadow-md bg-card">
         <CardHeader className="items-center text-center">
           {/* Aplica a logo dinâmica vinda do settings ou a default do projeto caso falhe */}
-          <img src={defaultLogo} alt="Logo Painel" className="h-20 w-auto mb-2 object-contain" />
+          <img src={defaultLogo} alt="DFL" className="h-24 w-auto mb-2 object-contain" />
           <CardTitle className="font-display text-2xl">Entrar no painel</CardTitle>
         </CardHeader>
         <CardContent>

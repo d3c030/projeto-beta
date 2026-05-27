@@ -167,11 +167,27 @@ function AcessosPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | string }) {
+function Stat({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: number | string;
+  tone?: "default" | "emerald" | "amber";
+}) {
+  const dot = {
+    default: "bg-zinc-500",
+    emerald: "bg-emerald-400",
+    amber: "bg-amber-400",
+  }[tone];
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-      <p className="text-xs uppercase tracking-widest text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-display text-zinc-50">{value}</p>
+    <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur p-4 md:p-5">
+      <div className="flex items-center gap-2">
+        <span className={"h-1.5 w-1.5 rounded-full " + dot} />
+        <p className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</p>
+      </div>
+      <p className="mt-2 text-2xl md:text-3xl font-display text-zinc-50 leading-none">{value}</p>
     </div>
   );
 }

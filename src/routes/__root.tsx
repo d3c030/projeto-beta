@@ -124,12 +124,25 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    let currentUserId: string | null | undefined = undefined;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      // Clear any cached data from the previous user/session
-      queryClient.clear();
-      router.invalidate();
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+
+      // First callback (INITIAL_SESSION): just record the user, don't wipe cache.
+      if (currentUserId === undefined) {
+        currentUserId = nextUserId;
+        return;
+      }
+
+      // Only clear cache when the user actually changes (sign-in as different user, sign-out).
+      // Ignore TOKEN_REFRESHED / USER_UPDATED on the same user — those would wipe fresh data.
+      if (nextUserId !== currentUserId) {
+        currentUserId = nextUserId;
+        queryClient.clear();
+        router.invalidate();
+      }
     });
     return () => subscription.unsubscribe();
   }, [queryClient, router]);

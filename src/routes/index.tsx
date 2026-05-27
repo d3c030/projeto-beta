@@ -387,7 +387,7 @@ function Dashboard() {
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <ComposedChart data={dailyData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
                     dataKey="label"
@@ -414,13 +414,14 @@ function Dashboard() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
-                    formatter={(value: number, _n, item: { payload?: { count?: number } }) => [
-                      `${formatBRL(value)} · ${item?.payload?.count ?? 0} atend.`,
-                      "Entradas",
-                    ]}
+                    formatter={(value: number, name: string, item: { payload?: { count?: number } }) => {
+                      if (name === "Custos") return [formatBRL(value), "Custos"];
+                      return [`${formatBRL(value)} · ${item?.payload?.count ?? 0} atend.`, "Entradas"];
+                    }}
                     labelFormatter={(l: string) => `Dia ${l}`}
                   />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                  <Bar dataKey="value" name="Entradas" radius={[6, 6, 0, 0]}>
                     {dailyData.map((d) => (
                       <Cell
                         key={d.day}
@@ -434,7 +435,16 @@ function Dashboard() {
                       />
                     ))}
                   </Bar>
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="cost"
+                    name="Custos"
+                    stroke="var(--destructive)"
+                    strokeWidth={2}
+                    dot={{ r: 2.5, fill: "var(--destructive)" }}
+                    activeDot={{ r: 4 }}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}

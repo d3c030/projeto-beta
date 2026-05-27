@@ -21,6 +21,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Busca dinamicamente as configurações globais de marca (incluindo a logo atual do banco)
   const settingsQ = useQuery({
     queryKey: ["public-contact-settings"],
     queryFn: () => getContactSettings(),
@@ -48,10 +49,11 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm border-border/70 shadow-md">
         <CardHeader className="items-center text-center">
+          {/* Aplica a logo dinâmica vinda do settings ou a default do projeto caso falhe */}
           <img
             src={settingsQ.data?.logo_url || defaultLogo}
-            alt="Studio Taiane Oliveira"
-            className="h-20 w-auto mb-2"
+            alt="Logo Painel"
+            className="h-20 w-auto mb-2 object-contain"
           />
           <CardTitle className="font-display text-2xl">Entrar no painel</CardTitle>
         </CardHeader>

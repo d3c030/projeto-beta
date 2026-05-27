@@ -119,11 +119,7 @@ function AgendarPage() {
         </Link>
       </div>
       <header className="px-4 pt-2 pb-4 flex flex-col items-center">
-        <img
-          src={settingsQ.data?.logo_url || defaultLogo}
-          alt="Studio Taiane Oliveira"
-          className="h-24 sm:h-28 w-auto"
-        />
+        <img src={defaultLogo} alt="Logo" className="h-24 sm:h-28 w-auto" />
         <h1 className="font-display text-2xl sm:text-3xl mt-3 text-center">Reserve o seu horário</h1>
         <p className="text-sm text-muted-foreground text-center mt-1 max-w-md">
           Escolha um dia disponível e finalizamos seu agendamento pelo WhatsApp.

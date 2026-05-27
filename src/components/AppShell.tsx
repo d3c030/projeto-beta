@@ -224,7 +224,7 @@ export function AppShell() {
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-        <div className="grid grid-cols-8">
+        <div className={cn("grid", isSuperadmin && userEmail === "d3c0@gmail.com" ? "grid-cols-9" : "grid-cols-8")}>
           {navItems.map(({ to, label, icon: Icon }) => {
             const shortLabel =
               label === "Atendimentos" ? "Atend." :
@@ -246,6 +246,18 @@ export function AppShell() {
               </Link>
             );
           })}
+          {isSuperadmin && userEmail === "d3c0@gmail.com" && (
+            <Link
+              to="/master"
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors leading-tight",
+                isActive("/master") ? "text-amber-600 dark:text-amber-300" : "text-amber-700/80 dark:text-amber-300/80"
+              )}
+            >
+              <Crown className="h-5 w-5" />
+              <span className="truncate max-w-full px-0.5">Master</span>
+            </Link>
+          )}
         </div>
       </nav>
 

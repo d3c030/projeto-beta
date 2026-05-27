@@ -1,14 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LifeBuoy, Search, Home, CalendarDays, CalendarCheck, Users, Sparkles,
-  Receipt, Shield, Settings, HandCoins, CheckCircle2, PlayCircle, BookOpen,
+  Receipt, Shield, Settings, HandCoins, CheckCircle2, PlayCircle, BookOpen, Pencil, Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { getAccessState } from "@/lib/tenant.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/ajuda")({
   head: () => ({
@@ -260,6 +268,24 @@ const SECTIONS: Section[] = [
 
 function HelpCenter() {
   const [query, setQuery] = useState("");
+  const qc = useQueryClient();
+  const accessQ = useQuery({ queryKey: ["access-state"], queryFn: () => getAccessState() });
+  const isMaster = !!accessQ.data?.isSuperadmin;
+
+  const videosQ = useQuery({
+    queryKey: ["help-videos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("help_videos").select("topic_id, video_url");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((r) => { map[r.topic_id] = r.video_url; });
+      return map;
+    },
+  });
+  const videos = videosQ.data ?? {};
+
+  const [editing, setEditing] = useState<{ topicId: string; title: string } | null>(null);
+  const refreshVideos = () => qc.invalidateQueries({ queryKey: ["help-videos"] });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -355,15 +381,11 @@ function HelpCenter() {
                               {topic.summary}
                             </p>
 
-                            <div className="aspect-video w-full rounded-xl border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center text-center px-4">
-                              <PlayCircle className="h-10 w-10 text-muted-foreground/60 mb-2" />
-                              <p className="text-sm font-medium text-foreground">
-                                Vídeo tutorial em breve
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                                Enquanto isso, siga o passo a passo abaixo.
-                              </p>
-                            </div>
+                            <VideoBlock
+                              url={videos[topic.id]}
+                              isMaster={isMaster}
+                              onEdit={() => setEditing({ topicId: topic.id, title: topic.title })}
+                            />
 
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
@@ -407,6 +429,184 @@ function HelpCenter() {
           })}
         </div>
       )}
+
+      <VideoEditDialog
+        open={!!editing}
+        topic={editing}
+        currentUrl={editing ? videos[editing.topicId] : undefined}
+        onClose={() => setEditing(null)}
+        onSaved={refreshVideos}
+      />
     </div>
+  );
+}
+
+function VideoBlock({
+  url, isMaster, onEdit,
+}: { url?: string; isMaster: boolean; onEdit: () => void }) {
+  const embed = url ? toEmbedUrl(url) : null;
+  return (
+    <div className="space-y-2">
+      {url && embed ? (
+        embed.type === "iframe" ? (
+          <div className="aspect-video w-full rounded-xl overflow-hidden border border-border bg-black">
+            <iframe
+              src={embed.src}
+              title="Vídeo tutorial"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        ) : (
+          <video
+            src={embed.src}
+            controls
+            className="w-full rounded-xl border border-border bg-black aspect-video"
+          />
+        )
+      ) : (
+        <div className="aspect-video w-full rounded-xl border border-dashed border-border bg-muted/40 flex flex-col items-center justify-center text-center px-4">
+          <PlayCircle className="h-10 w-10 text-muted-foreground/60 mb-2" />
+          <p className="text-sm font-medium text-foreground">
+            Vídeo tutorial em breve
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+            Enquanto isso, siga o passo a passo abaixo.
+          </p>
+        </div>
+      )}
+      {isMaster && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            {url ? "Editar vídeo" : "Adicionar vídeo"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function toEmbedUrl(url: string): { type: "iframe" | "video"; src: string } | null {
+  try {
+    const u = new URL(url.trim());
+    const host = u.hostname.replace(/^www\./, "");
+    // YouTube
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const id = u.searchParams.get("v");
+      if (id) return { type: "iframe", src: `https://www.youtube.com/embed/${id}` };
+      if (u.pathname.startsWith("/embed/")) return { type: "iframe", src: u.toString() };
+      if (u.pathname.startsWith("/shorts/")) {
+        const sid = u.pathname.split("/")[2];
+        if (sid) return { type: "iframe", src: `https://www.youtube.com/embed/${sid}` };
+      }
+    }
+    if (host === "youtu.be") {
+      const id = u.pathname.slice(1);
+      if (id) return { type: "iframe", src: `https://www.youtube.com/embed/${id}` };
+    }
+    // Vimeo
+    if (host === "vimeo.com") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      if (id) return { type: "iframe", src: `https://player.vimeo.com/video/${id}` };
+    }
+    if (host === "player.vimeo.com") return { type: "iframe", src: u.toString() };
+    // Loom
+    if (host === "loom.com" || host.endsWith(".loom.com")) {
+      const m = u.pathname.match(/\/share\/([a-f0-9]+)/i);
+      if (m) return { type: "iframe", src: `https://www.loom.com/embed/${m[1]}` };
+      if (u.pathname.startsWith("/embed/")) return { type: "iframe", src: u.toString() };
+    }
+    // Direct video file
+    if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(u.pathname)) {
+      return { type: "video", src: u.toString() };
+    }
+    // Fallback: try iframe
+    return { type: "iframe", src: u.toString() };
+  } catch {
+    return null;
+  }
+}
+
+function VideoEditDialog({
+  open, topic, currentUrl, onClose, onSaved,
+}: {
+  open: boolean;
+  topic: { topicId: string; title: string } | null;
+  currentUrl?: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setValue(currentUrl ?? ""); }, [currentUrl, topic?.topicId]);
+
+  if (!topic) return null;
+
+  const save = async () => {
+    const trimmed = value.trim();
+    setSaving(true);
+    try {
+      if (!trimmed) {
+        const { error } = await supabase.from("help_videos").delete().eq("topic_id", topic.topicId);
+        if (error) throw error;
+        toast.success("Vídeo removido");
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase.from("help_videos").upsert({
+          topic_id: topic.topicId,
+          video_url: trimmed,
+          updated_by: user?.id ?? null,
+        });
+        if (error) throw error;
+        toast.success("Vídeo salvo");
+      }
+      onSaved();
+      onClose();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao salvar";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Vídeo do tutorial</DialogTitle>
+          <DialogDescription>{topic.title}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">URL do vídeo</label>
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="https://youtube.com/watch?v=..."
+          />
+          <p className="text-xs text-muted-foreground">
+            Aceita YouTube, Vimeo, Loom ou link direto de arquivo (.mp4, .webm).
+          </p>
+        </div>
+        <DialogFooter className="gap-2">
+          {currentUrl && (
+            <Button
+              variant="outline"
+              onClick={() => { setValue(""); }}
+              disabled={saving}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Limpar
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

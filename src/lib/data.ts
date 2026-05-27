@@ -41,6 +41,7 @@ export type Client = {
   name: string;
   normalized_name: string;
   phone: string | null;
+  email: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -56,7 +57,7 @@ export type AppointmentInput = Omit<
   discount?: number;
 };
 export type ExpenseInput = Omit<Expense, "id" | "created_at">;
-export type ClientInput = Pick<Client, "name" | "phone" | "notes">;
+export type ClientInput = Pick<Client, "name" | "phone" | "email" | "notes">;
 
 const monthRange = (year: number, monthIdx: number) => {
   const start = new Date(year, monthIdx, 1);

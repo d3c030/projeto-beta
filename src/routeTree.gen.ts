@@ -21,8 +21,10 @@ import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterIndexRouteImport } from './routes/master.index'
+import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
+import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
@@ -84,6 +86,11 @@ const MasterIndexRoute = MasterIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MasterRoute,
 } as any)
+const TSlugRoute = TSlugRouteImport.update({
+  id: '/t/$slug',
+  path: '/t/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -93,6 +100,11 @@ const AgendarDateRoute = AgendarDateRouteImport.update({
   id: '/$date',
   path: '/$date',
   getParentRoute: () => AgendarRoute,
+} as any)
+const TSlugIndexRoute = TSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TSlugRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -109,7 +121,9 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/': typeof TSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +139,7 @@ export interface FileRoutesByTo {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
   '/master': typeof MasterIndexRoute
+  '/t/$slug': typeof TSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,7 +156,9 @@ export interface FileRoutesById {
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
+  '/t/$slug/': typeof TSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,7 +176,9 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/agendar/$date'
     | '/master/clientes'
+    | '/t/$slug'
     | '/master/'
+    | '/t/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +194,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/clientes'
     | '/master'
+    | '/t/$slug'
   id:
     | '__root__'
     | '/'
@@ -190,7 +210,9 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/agendar/$date'
     | '/master/clientes'
+    | '/t/$slug'
     | '/master/'
+    | '/t/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,6 +227,7 @@ export interface RootRouteChildren {
   MasterRoute: typeof MasterRouteWithChildren
   ProcedimentosRoute: typeof ProcedimentosRoute
   UsuariosRoute: typeof UsuariosRoute
+  TSlugRoute: typeof TSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -293,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterIndexRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/t/$slug': {
+      id: '/t/$slug'
+      path: '/t/$slug'
+      fullPath: '/t/$slug'
+      preLoaderRoute: typeof TSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -306,6 +336,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/agendar/$date'
       preLoaderRoute: typeof AgendarDateRouteImport
       parentRoute: typeof AgendarRoute
+    }
+    '/t/$slug/': {
+      id: '/t/$slug/'
+      path: '/'
+      fullPath: '/t/$slug/'
+      preLoaderRoute: typeof TSlugIndexRouteImport
+      parentRoute: typeof TSlugRoute
     }
   }
 }
@@ -334,6 +371,16 @@ const MasterRouteChildren: MasterRouteChildren = {
 const MasterRouteWithChildren =
   MasterRoute._addFileChildren(MasterRouteChildren)
 
+interface TSlugRouteChildren {
+  TSlugIndexRoute: typeof TSlugIndexRoute
+}
+
+const TSlugRouteChildren: TSlugRouteChildren = {
+  TSlugIndexRoute: TSlugIndexRoute,
+}
+
+const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
@@ -346,7 +393,18 @@ const rootRouteChildren: RootRouteChildren = {
   MasterRoute: MasterRouteWithChildren,
   ProcedimentosRoute: ProcedimentosRoute,
   UsuariosRoute: UsuariosRoute,
+  TSlugRoute: TSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

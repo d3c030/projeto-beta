@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Instagram, MessageCircle, Clock } from "lucide-react";
 import { getBookedSlots, getAgendaOverrides } from "@/lib/public-booking.functions";
-import { getContactSettings } from "@/lib/settings.functions";
 import {
   generateDailySlots,
   isClosedDay,
@@ -39,12 +38,8 @@ function AgendarDatePage() {
     enabled: dateValid,
   });
 
-  const settingsQ = useQuery({
-    queryKey: ["public-contact-settings"],
-    queryFn: () => getContactSettings(),
-  });
-  const waPhone = settingsQ.data?.whatsapp_phone || BOOKING_PHONE;
-  const igUrl = settingsQ.data?.instagram_url || INSTAGRAM_URL;
+  const waPhone = BOOKING_PHONE;
+  const igUrl = INSTAGRAM_URL;
 
   const override = (overridesQ.data ?? []).find((o) => o.date === date);
   const isOpen = override ? override.is_open : !isClosedDay(dateObj);
@@ -111,7 +106,7 @@ function AgendarDatePage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <img src={settingsQ.data?.logo_url || defaultLogo} alt="Studio Taiane Oliveira" className="h-14 w-auto" />
+        <img src={defaultLogo} alt="Logo" className="h-14 w-auto" />
         <div className="w-10" />
       </header>
 

@@ -48,7 +48,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="theme-preto min-h-screen flex items-center justify-center bg-background text-foreground px-4">
+    <div className="theme-preto min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-4">
       <Card className="w-full max-w-sm border-border/70 shadow-md bg-card">
         <CardHeader className="items-center text-center">
           {/* Aplica a logo dinâmica vinda do settings ou a default do projeto caso falhe */}

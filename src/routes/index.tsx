@@ -392,10 +392,10 @@ function Dashboard() {
                   <XAxis
                     dataKey="label"
                     tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    interval={0}
+                    interval="preserveStartEnd"
+                    minTickGap={16}
                     tickLine={false}
                     axisLine={false}
-                    minTickGap={0}
                   />
                   <YAxis
                     tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}

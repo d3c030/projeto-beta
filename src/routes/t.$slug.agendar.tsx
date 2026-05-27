@@ -9,7 +9,6 @@ import {
   isClosedDay,
   isoFromDate,
   normalizeTime,
-  parseISODate,
 } from "@/lib/booking-config";
 import { MONTHS_PT } from "@/lib/format";
 import { cn } from "@/lib/utils";

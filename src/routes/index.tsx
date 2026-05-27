@@ -644,6 +644,40 @@ function Dashboard() {
         appointment={checkoutAppt}
         onCompleted={invalidateAll}
       />
+
+      <ExpenseDialog
+        open={expenseDialogOpen}
+        onOpenChange={setExpenseDialogOpen}
+        initial={editingExpense}
+        onSubmit={async (data) => {
+          try {
+            if (editingExpense) {
+              await updateExpense(editingExpense.id, data);
+              toast.success("Custo atualizado");
+            } else {
+              await createExpense(data);
+              toast.success("Custo registrado");
+            }
+            invalidateAll();
+          } catch (e) {
+            toast.error("Erro ao guardar custo");
+            throw e;
+          }
+        }}
+        onDelete={
+          editingExpense
+            ? async () => {
+                try {
+                  await deleteExpense(editingExpense.id);
+                  toast.success("Custo apagado");
+                  invalidateAll();
+                } catch {
+                  toast.error("Erro ao apagar");
+                }
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

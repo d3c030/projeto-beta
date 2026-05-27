@@ -191,7 +191,7 @@ export function AppShell() {
         <div className="w-9" />
         <img
           src={logo}
-          alt="Studio Taiane Oliveira — Sobrancelhas e Piercing"
+          alt="Logo"
           className="h-14 w-auto"
         />
         <button

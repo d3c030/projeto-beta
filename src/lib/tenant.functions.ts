@@ -1,0 +1,241 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export type TenantStatus = "ativo" | "inadimplente" | "suspenso";
+
+export type Tenant = {
+  id: string;
+  business_name: string;
+  owner_name: string;
+  whatsapp: string;
+  slug: string;
+  plan_name: string;
+  monthly_price: number;
+  due_day: number;
+  status: TenantStatus;
+  logo_url: string;
+  primary_color: string;
+  theme: string;
+  instagram_url: string;
+  pix_key: string;
+  pix_copia_cola: string;
+  pix_qr_url: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AccessState = {
+  isSuperadmin: boolean;
+  tenant: Tenant | null;
+  roles: string[];
+};
+
+async function assertSuperadmin(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "superadmin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Acesso negado: apenas super admin");
+}
+
+export const getAccessState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AccessState> => {
+    const userId = context.userId;
+    const [rolesRes, profileRes] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
+      supabaseAdmin.from("profiles").select("tenant_id").eq("user_id", userId).maybeSingle(),
+    ]);
+    if (rolesRes.error) throw new Error(rolesRes.error.message);
+    const roles = (rolesRes.data ?? []).map((r) => r.role as string);
+    const isSuperadmin = roles.includes("superadmin");
+    let tenant: Tenant | null = null;
+    const tenantId = profileRes.data?.tenant_id ?? null;
+    if (tenantId) {
+      const { data: t } = await supabaseAdmin.from("tenants").select("*").eq("id", tenantId).maybeSingle();
+      tenant = (t as Tenant | null) ?? null;
+    }
+    return { isSuperadmin, tenant, roles };
+  });
+
+export const listTenants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Tenant[]> => {
+    await assertSuperadmin(context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("tenants")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Tenant[];
+  });
+
+export const getTenant = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<Tenant | null> => {
+    await assertSuperadmin(context.userId);
+    const { data: t, error } = await supabaseAdmin.from("tenants").select("*").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return (t as Tenant | null) ?? null;
+  });
+
+const TenantInputSchema = z.object({
+  business_name: z.string().trim().min(1).max(200),
+  owner_name: z.string().trim().max(200).default(""),
+  whatsapp: z.string().trim().max(20).regex(/^[0-9]*$/, "Apenas dígitos").default(""),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Use letras minúsculas, números e hifens"),
+  plan_name: z.string().trim().max(100).default("Básico"),
+  monthly_price: z.number().min(0).max(1_000_000),
+  due_day: z.number().int().min(1).max(31),
+  status: z.enum(["ativo", "inadimplente", "suspenso"]).default("ativo"),
+  logo_url: z.string().trim().max(500).default(""),
+  primary_color: z.string().trim().max(50).default(""),
+  theme: z.string().trim().max(50).default("rosa"),
+  instagram_url: z.string().trim().max(255).default(""),
+  pix_key: z.string().trim().max(255).default(""),
+  pix_copia_cola: z.string().trim().max(2000).default(""),
+  pix_qr_url: z.string().trim().max(500).default(""),
+});
+
+export const createTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        tenant: TenantInputSchema,
+        owner_email: z.string().email(),
+        owner_password: z.string().min(8).max(72),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+
+    const { data: created, error } = await supabaseAdmin
+      .from("tenants")
+      .insert(data.tenant)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    const tenant = created as Tenant;
+
+    // Create owner user
+    const { data: userRes, error: userErr } = await supabaseAdmin.auth.admin.createUser({
+      email: data.owner_email,
+      password: data.owner_password,
+      email_confirm: true,
+    });
+    if (userErr) {
+      // rollback tenant
+      await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
+      throw new Error(`Falha ao criar usuário: ${userErr.message}`);
+    }
+    const uid = userRes.user!.id;
+    await supabaseAdmin.from("profiles").insert({
+      user_id: uid,
+      display_name: data.tenant.owner_name || data.owner_email,
+      tenant_id: tenant.id,
+    });
+    await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: uid, role: "tenant_owner", tenant_id: tenant.id });
+
+    return { tenant, owner_user_id: uid };
+  });
+
+export const updateTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), patch: TenantInputSchema.partial() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+    const { error } = await supabaseAdmin.from("tenants").update(data.patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateTenantStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ id: z.string().uuid(), status: z.enum(["ativo", "inadimplente", "suspenso"]) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+    const { error } = await supabaseAdmin.from("tenants").update({ status: data.status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+    const { error } = await supabaseAdmin.from("tenants").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getSaasMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertSuperadmin(context.userId);
+    const { data: tenants, error } = await supabaseAdmin
+      .from("tenants")
+      .select("status, monthly_price, created_at");
+    if (error) throw new Error(error.message);
+
+    const all = tenants ?? [];
+    const ativos = all.filter((t) => t.status === "ativo").length;
+    const inadimplentes = all.filter((t) => t.status === "inadimplente").length;
+    const suspensos = all.filter((t) => t.status === "suspenso").length;
+    const mrr = all
+      .filter((t) => t.status === "ativo")
+      .reduce((s, t) => s + Number(t.monthly_price || 0), 0);
+
+    // Monthly growth — last 6 months
+    const now = new Date();
+    const months: { key: string; label: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      months.push({
+        key,
+        label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+        count: 0,
+      });
+    }
+    for (const t of all) {
+      const d = new Date(t.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const m = months.find((x) => x.key === key);
+      if (m) m.count += 1;
+    }
+
+    const novosNoMes = months[months.length - 1]?.count ?? 0;
+
+    return {
+      total: all.length,
+      ativos,
+      inadimplentes,
+      suspensos,
+      inativos: inadimplentes + suspensos,
+      mrr,
+      novosNoMes,
+      growth: months,
+    };
+  });

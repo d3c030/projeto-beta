@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useParams, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { getTenantBySlug, type PublicTenant } from "@/lib/tenant-public.functions";

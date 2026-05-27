@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -32,9 +32,9 @@ export const Route = createFileRoute("/master/clientes")({
 });
 
 const STATUS_OPTIONS: { value: TenantStatus; label: string; cls: string }[] = [
-  { value: "ativo", label: "Ativo", cls: "bg-emerald-900/40 text-emerald-300 border-emerald-800" },
-  { value: "inadimplente", label: "Inadimplente", cls: "bg-amber-900/40 text-amber-300 border-amber-800" },
-  { value: "suspenso", label: "Suspenso", cls: "bg-red-900/40 text-red-300 border-red-800" },
+  { value: "ativo", label: "Ativo", cls: "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30" },
+  { value: "inadimplente", label: "Inadimplente", cls: "bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30" },
+  { value: "suspenso", label: "Suspenso", cls: "bg-red-500/15 text-red-300 ring-1 ring-inset ring-red-500/30" },
 ];
 
 function ClientesMaster() {
@@ -68,110 +68,107 @@ function ClientesMaster() {
   const [payingTenant, setPayingTenant] = useState<Tenant | null>(null);
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between gap-3">
+    <div className="space-y-8">
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl text-zinc-50">Clientes</h1>
-          <p className="text-sm text-zinc-400">Gerencie os tenants do SaaS.</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-400/80 mb-1.5">Clientes</p>
+          <h1 className="font-display text-3xl md:text-4xl text-zinc-50">Gestão de tenants</h1>
+          <p className="text-sm text-zinc-400 mt-1">Cadastre, edite, suspenda e registre pagamentos.</p>
         </div>
-        <Button onClick={() => setOpenNew(true)} className="bg-zinc-100 text-zinc-900 hover:bg-white">
+        <Button onClick={() => setOpenNew(true)} className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-medium shadow-lg shadow-amber-500/20">
           <Plus className="h-4 w-4 mr-1.5" /> Novo cliente
         </Button>
       </header>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
-            <tr>
-              <th className="text-left px-4 py-3">Negócio</th>
-              <th className="text-left px-4 py-3">Responsável</th>
-              <th className="text-left px-4 py-3">WhatsApp</th>
-              <th className="text-left px-4 py-3">Plano</th>
-              <th className="text-right px-4 py-3">Valor</th>
-              <th className="text-center px-4 py-3">Venc.</th>
-              <th className="text-center px-4 py-3">Licença</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {q.isLoading && (
-              <tr><td colSpan={9} className="px-4 py-6 text-center text-zinc-500">Carregando…</td></tr>
-            )}
-            {q.data?.length === 0 && (
-              <tr><td colSpan={9} className="px-4 py-6 text-center text-zinc-500">Nenhum cliente ainda.</td></tr>
-            )}
-            {q.data?.map((t) => (
-              <tr key={t.id} className="hover:bg-zinc-800/40">
-                <td className="px-4 py-3 font-medium text-zinc-100">{t.business_name}</td>
-                <td className="px-4 py-3 text-zinc-300">{t.owner_name || "—"}</td>
-                <td className="px-4 py-3 text-zinc-300">
-                  <div className="flex flex-col gap-1">
-                    <span>{t.whatsapp || "—"}</span>
-                    <a
-                      href={`/t/${t.slug}/agendar`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-200"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      /t/{t.slug}
-                    </a>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-zinc-300">{t.plan_name}</td>
-                <td className="px-4 py-3 text-right text-zinc-300">{formatBRL(Number(t.monthly_price || 0))}</td>
-                <td className="px-4 py-3 text-center text-zinc-300">dia {t.due_day}</td>
-                <td className="px-4 py-3 text-center"><LicenseCell expiresAt={t.license_expires_at} /></td>
-                <td className="px-4 py-3">
-                  <div className="inline-flex rounded-md border border-zinc-800 overflow-hidden">
-                    {STATUS_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => statusM.mutate({ id: t.id, status: opt.value })}
-                        disabled={statusM.isPending}
-                        className={
-                          "px-2 py-1 text-[11px] transition-colors " +
-                          (t.status === opt.value
-                            ? opt.cls + " border-r last:border-r-0"
-                            : "text-zinc-500 hover:bg-zinc-800 border-r last:border-r-0 border-zinc-800")
-                        }
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => setPayingTenant(t)}
-                    className="text-emerald-500 hover:text-emerald-300 mr-3"
-                    title="Registrar pagamento"
-                  >
-                    <DollarSign className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setEditing(t)}
-                    className="text-zinc-500 hover:text-zinc-100 mr-3"
-                    title="Editar"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Excluir ${t.business_name}? Todos os dados deste tenant serão removidos.`))
-                        delM.mutate(t.id);
-                    }}
-                    className="text-zinc-500 hover:text-red-400"
-                    title="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {q.isLoading && (
+        <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-10 text-center text-sm text-zinc-500">Carregando…</div>
+      )}
+      {q.data?.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30 p-12 text-center">
+          <Users2 className="h-8 w-8 mx-auto text-zinc-600 mb-3" />
+          <p className="text-sm text-zinc-400">Nenhum cliente cadastrado ainda.</p>
+          <Button onClick={() => setOpenNew(true)} className="mt-4 bg-amber-400 text-zinc-950 hover:bg-amber-300">
+            <Plus className="h-4 w-4 mr-1.5" /> Cadastrar primeiro cliente
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {q.data?.map((t) => (
+          <div
+            key={t.id}
+            className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur p-5 hover:border-zinc-700 transition-colors"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-lg text-zinc-50 truncate">{t.business_name}</h3>
+                <p className="text-xs text-zinc-500 mt-0.5 truncate">{t.owner_name || "Sem responsável"}</p>
+              </div>
+              <StatusBadge status={t.status} />
+            </div>
+
+            {/* Stats */}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <Stat label="Plano" value={t.plan_name} />
+              <Stat label="Mensalidade" value={formatBRL(Number(t.monthly_price || 0))} />
+              <Stat label="Vencimento" value={`dia ${t.due_day}`} />
+            </div>
+
+            {/* License + contact */}
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-950/50 border border-zinc-800/60 px-3 py-2.5">
+              <LicenseInline expiresAt={t.license_expires_at} />
+              <div className="flex items-center gap-1.5 text-xs text-zinc-400 truncate">
+                <Phone className="h-3 w-3 shrink-0" />
+                <span className="truncate">{t.whatsapp || "—"}</span>
+              </div>
+            </div>
+
+            {/* Footer actions */}
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <a
+                href={`/t/${t.slug}/agendar`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-amber-400 transition-colors"
+              >
+                <ExternalLink className="h-3 w-3" />
+                /t/{t.slug}
+              </a>
+              <div className="flex items-center gap-1">
+                <StatusPicker
+                  current={t.status}
+                  onSelect={(s) => statusM.mutate({ id: t.id, status: s })}
+                  disabled={statusM.isPending}
+                />
+                <button
+                  onClick={() => setPayingTenant(t)}
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                  title="Registrar pagamento"
+                >
+                  <DollarSign className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setEditing(t)}
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+                  title="Editar"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Excluir ${t.business_name}? Todos os dados deste tenant serão removidos.`))
+                      delM.mutate(t.id);
+                  }}
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                  title="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <NewTenantDialog open={openNew} onClose={() => setOpenNew(false)} />
@@ -181,18 +178,70 @@ function ClientesMaster() {
   );
 }
 
-function LicenseCell({ expiresAt }: { expiresAt: string | null }) {
-  if (!expiresAt) return <span className="text-[11px] text-zinc-500">—</span>;
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg bg-zinc-950/50 border border-zinc-800/60 px-2.5 py-2">
+      <p className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</p>
+      <p className="text-sm text-zinc-100 truncate mt-0.5 font-medium">{value}</p>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: TenantStatus }) {
+  const opt = STATUS_OPTIONS.find((s) => s.value === status)!;
+  return (
+    <span className={"inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium shrink-0 " + opt.cls}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current mr-1.5 opacity-80" />
+      {opt.label}
+    </span>
+  );
+}
+
+function StatusPicker({
+  current,
+  onSelect,
+  disabled,
+}: {
+  current: TenantStatus;
+  onSelect: (s: TenantStatus) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <select
+      value={current}
+      disabled={disabled}
+      onChange={(e) => onSelect(e.target.value as TenantStatus)}
+      className="h-8 rounded-lg bg-zinc-800/80 border border-zinc-700/60 text-xs text-zinc-200 px-2 hover:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-400/50 cursor-pointer"
+      title="Alterar status"
+    >
+      {STATUS_OPTIONS.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
+function LicenseInline({ expiresAt }: { expiresAt: string | null }) {
+  if (!expiresAt) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <CalendarClock className="h-3 w-3" />
+        Sem pagamento
+      </div>
+    );
+  }
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const [y, m, d] = expiresAt.split("-").map(Number);
   const exp = new Date(y, m - 1, d);
   const days = Math.ceil((exp.getTime() - today.getTime()) / 86400000);
-  const fmt = exp.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const fmt = exp.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
   const cls = days < 0 ? "text-red-400" : days <= 5 ? "text-amber-400" : "text-emerald-400";
-  const lbl = days < 0 ? `vencida há ${Math.abs(days)}d` : days === 0 ? "vence hoje" : `${days}d`;
+  const lbl = days < 0 ? `vencida há ${Math.abs(days)}d` : days === 0 ? "vence hoje" : `${days}d restantes`;
   return (
-    <div className="flex flex-col items-center text-[11px]">
+    <div className="flex items-center gap-1.5 text-xs">
+      <CalendarClock className={"h-3 w-3 " + cls} />
       <span className={cls + " font-medium"}>{lbl}</span>
+      <span className="text-zinc-600">·</span>
       <span className="text-zinc-500">{fmt}</span>
     </div>
   );

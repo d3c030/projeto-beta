@@ -146,7 +146,7 @@ export function AppShell() {
         <div className="mb-10 flex justify-center">
           <img
             src={logo}
-            alt="Studio Taiane Oliveira — Sobrancelhas e Piercing"
+            alt="Logo"
             className="w-44 h-auto"
           />
         </div>
@@ -191,7 +191,7 @@ export function AppShell() {
         <div className="w-9" />
         <img
           src={logo}
-          alt="Studio Taiane Oliveira — Sobrancelhas e Piercing"
+          alt="Logo"
           className="h-14 w-auto"
         />
         <button

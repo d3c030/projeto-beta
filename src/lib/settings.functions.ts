@@ -99,7 +99,15 @@ export const updateContactSettings = createServerFn({ method: "POST" })
     const tenantId = (profile?.tenant_id as string | undefined) ?? null;
     if (!tenantId) throw new Error("Usuário sem tenant associado.");
 
-    const patch: Record<string, unknown> = {
+    const patch: {
+      instagram_url: string;
+      whatsapp: string;
+      logo_url?: string;
+      theme?: string;
+      pix_key?: string;
+      pix_copia_cola?: string;
+      pix_qr_url?: string;
+    } = {
       instagram_url: data.instagram_url,
       whatsapp: data.whatsapp_phone,
     };

@@ -107,7 +107,7 @@ export function AppShell() {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Carregando…</div>;
   }
   if (authState === "out") {
-    if (typeof window !== "undefined") navigate({ to: "/agendar", replace: true });
+    if (typeof window !== "undefined") navigate({ to: "/login", replace: true });
     return null;
   }
 

@@ -20,11 +20,10 @@ import defaultLogo from "@/assets/logo.png";
 export const Route = createFileRoute("/agendar")({
   head: () => ({
     meta: [
-      { title: "Agendar — Studio Taiane Oliveira" },
+      { title: "Agendar" },
       {
         name: "description",
-        content:
-          "Escolha o melhor dia e horário para o seu atendimento no Studio Taiane Oliveira.",
+        content: "Escolha o melhor dia e horário para o seu atendimento.",
       },
     ],
   }),
@@ -53,7 +52,6 @@ function AgendarPage() {
   });
   const waPhone = settingsQ.data?.whatsapp_phone || BOOKING_PHONE;
   const igUrl = settingsQ.data?.instagram_url || INSTAGRAM_URL;
-
 
   const slotsPerDay = generateDailySlots().length;
 
@@ -131,9 +129,7 @@ function AgendarPage() {
           alt="Studio Taiane Oliveira"
           className="h-24 sm:h-28 w-auto"
         />
-        <h1 className="font-display text-2xl sm:text-3xl mt-3 text-center">
-          Reserve o seu horário
-        </h1>
+        <h1 className="font-display text-2xl sm:text-3xl mt-3 text-center">Reserve o seu horário</h1>
         <p className="text-sm text-muted-foreground text-center mt-1 max-w-md">
           Escolha um dia disponível e finalizamos seu agendamento pelo WhatsApp.
         </p>
@@ -190,13 +186,7 @@ function AgendarPage() {
                       "text-muted-foreground/50 bg-muted/40 cursor-not-allowed",
                       status === "full" && "line-through",
                     )}
-                    title={
-                      status === "full"
-                        ? "Dia totalmente reservado"
-                        : status === "closed"
-                          ? "Fechado"
-                          : ""
-                    }
+                    title={status === "full" ? "Dia totalmente reservado" : status === "closed" ? "Fechado" : ""}
                   >
                     {c.day}
                   </div>
@@ -209,9 +199,7 @@ function AgendarPage() {
                 month: "long",
                 year: "numeric",
               });
-              const message = encodeURIComponent(
-                `Olá! Gostaria de agendar um horário para o dia ${dateLabel}.`,
-              );
+              const message = encodeURIComponent(`Olá! Gostaria de agendar um horário para o dia ${dateLabel}.`);
               const waUrl = `https://wa.me/${waPhone}?text=${message}`;
               return (
                 <a
@@ -264,7 +252,6 @@ function AgendarPage() {
             Seguir no Instagram
           </a>
         </div>
-
       </main>
     </div>
   );

@@ -62,21 +62,22 @@ function AcessosPage() {
   const nuncaAcessaram = rows.filter((r) => !r.last_sign_in_at).length;
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-start justify-between gap-4">
+    <div className="space-y-8">
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-zinc-50">Relatório de acessos</h1>
-          <p className="text-sm text-zinc-400">
-            Quem acessou a plataforma, quando e por qual cliente.
-          </p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-400/80 mb-1.5">Auditoria</p>
+          <h1 className="font-display text-3xl md:text-4xl text-zinc-50">Relatório de acessos</h1>
+          <p className="text-sm text-zinc-400 mt-1">Quem acessou a plataforma, quando e por qual cliente.</p>
         </div>
-        <Activity className="h-5 w-5 text-zinc-500" />
+        <div className="h-10 w-10 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center">
+          <Activity className="h-5 w-5 text-amber-400" />
+        </div>
       </header>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="Usuários" value={totalUsers} />
-        <Stat label="Ativos (30 dias)" value={ativos30d} />
-        <Stat label="Nunca acessaram" value={nuncaAcessaram} />
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <Stat label="Usuários" value={totalUsers} tone="default" />
+        <Stat label="Ativos (30 dias)" value={ativos30d} tone="emerald" />
+        <Stat label="Nunca acessaram" value={nuncaAcessaram} tone="amber" />
       </div>
 
       <div className="relative">
@@ -85,11 +86,11 @@ function AcessosPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por email, nome ou cliente"
-          className="w-full rounded-md border border-zinc-800 bg-zinc-900 pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+          className="w-full rounded-xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400/40 transition-all"
         />
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+      <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 backdrop-blur overflow-hidden">
         {q.isLoading ? (
           <div className="p-6 text-sm text-zinc-400">Carregando…</div>
         ) : q.isError ? (
@@ -101,13 +102,13 @@ function AcessosPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-950/40 text-zinc-400 text-xs uppercase tracking-wider">
+              <thead className="bg-zinc-950/60 text-zinc-500 text-[11px] uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Usuário</th>
-                  <th className="text-left px-4 py-3 font-medium">Cliente</th>
-                  <th className="text-left px-4 py-3 font-medium">Papéis</th>
-                  <th className="text-left px-4 py-3 font-medium">Último acesso</th>
-                  <th className="text-left px-4 py-3 font-medium">Cadastro</th>
+                  <th className="text-left px-4 py-3.5 font-medium">Usuário</th>
+                  <th className="text-left px-4 py-3.5 font-medium">Cliente</th>
+                  <th className="text-left px-4 py-3.5 font-medium">Papéis</th>
+                  <th className="text-left px-4 py-3.5 font-medium">Último acesso</th>
+                  <th className="text-left px-4 py-3.5 font-medium">Cadastro</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">

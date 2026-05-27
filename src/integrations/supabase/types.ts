@@ -362,6 +362,45 @@ export type Database = {
           },
         ]
       }
+      tenant_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          new_expires_at: string
+          notes: string | null
+          paid_at: string
+          payment_method: string | null
+          previous_expires_at: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_expires_at: string
+          notes?: string | null
+          paid_at?: string
+          payment_method?: string | null
+          previous_expires_at?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_expires_at?: string
+          notes?: string | null
+          paid_at?: string
+          payment_method?: string | null
+          previous_expires_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           business_name: string
@@ -369,6 +408,8 @@ export type Database = {
           due_day: number
           id: string
           instagram_url: string
+          last_payment_at: string | null
+          license_expires_at: string | null
           logo_url: string
           monthly_price: number
           owner_name: string
@@ -389,6 +430,8 @@ export type Database = {
           due_day?: number
           id?: string
           instagram_url?: string
+          last_payment_at?: string | null
+          license_expires_at?: string | null
           logo_url?: string
           monthly_price?: number
           owner_name?: string
@@ -409,6 +452,8 @@ export type Database = {
           due_day?: number
           id?: string
           instagram_url?: string
+          last_payment_at?: string | null
+          license_expires_at?: string | null
           logo_url?: string
           monthly_price?: number
           owner_name?: string

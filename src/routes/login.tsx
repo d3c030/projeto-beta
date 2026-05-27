@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { getContactSettings } from "@/lib/settings.functions";
 import defaultLogo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
@@ -20,12 +18,6 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Busca dinamicamente as configurações globais de marca (incluindo a logo atual do banco)
-  const settingsQ = useQuery({
-    queryKey: ["public-contact-settings"],
-    queryFn: () => getContactSettings(),
-  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -50,11 +42,7 @@ function LoginPage() {
       <Card className="w-full max-w-sm border-border/70 shadow-md">
         <CardHeader className="items-center text-center">
           {/* Aplica a logo dinâmica vinda do settings ou a default do projeto caso falhe */}
-          <img
-            src={settingsQ.data?.logo_url || defaultLogo}
-            alt="Logo Painel"
-            className="h-20 w-auto mb-2 object-contain"
-          />
+          <img src={defaultLogo} alt="Logo Painel" className="h-20 w-auto mb-2 object-contain" />
           <CardTitle className="font-display text-2xl">Entrar no painel</CardTitle>
         </CardHeader>
         <CardContent>

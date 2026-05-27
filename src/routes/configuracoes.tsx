@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Instagram, MessageCircle, Save, Image as ImageIcon, Upload, Palette, Check, QrCode } from "lucide-react";
+import { Instagram, MessageCircle, Save, Image as ImageIcon, Upload, Palette, Check, QrCode, KeyRound } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getContactSettings, updateContactSettings, THEMES, type ThemeName } from "@/lib/settings.functions";
@@ -373,6 +373,78 @@ function ConfiguracoesPage() {
           {m.isPending ? "Salvando…" : "Salvar alterações"}
         </Button>
       </div>
+
+      <ChangePasswordCard />
+    </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw.length < 8) {
+      toast.error("A senha precisa ter ao menos 8 caracteres");
+      return;
+    }
+    if (pw !== pw2) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Senha atualizada com sucesso");
+    setPw("");
+    setPw2("");
+  };
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4 max-w-xl">
+      <div className="flex items-center gap-2">
+        <KeyRound className="h-4 w-4 text-primary" />
+        <h2 className="font-display text-lg">Alterar senha</h2>
+      </div>
+      <form onSubmit={onSubmit} className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="new-pw">Nova senha</Label>
+          <Input
+            id="new-pw"
+            type="password"
+            autoComplete="new-password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            minLength={8}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="new-pw2">Confirmar nova senha</Label>
+          <Input
+            id="new-pw2"
+            type="password"
+            autoComplete="new-password"
+            value={pw2}
+            onChange={(e) => setPw2(e.target.value)}
+            minLength={8}
+            required
+          />
+        </div>
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? "Salvando…" : "Atualizar senha"}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Mínimo de 8 caracteres. Você continuará logado após a alteração.
+        </p>
+      </form>
     </div>
   );
 }

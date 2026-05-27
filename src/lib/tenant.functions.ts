@@ -192,6 +192,42 @@ export const deleteTenant = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const resetTenantOwnerPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        tenant_id: z.string().uuid(),
+        new_password: z.string().min(8).max(72),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSuperadmin(context.userId);
+
+    // Find the tenant owner (role = tenant_owner for this tenant)
+    const { data: roleRow, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("tenant_id", data.tenant_id)
+      .eq("role", "tenant_owner")
+      .limit(1)
+      .maybeSingle();
+    if (roleErr) throw new Error(roleErr.message);
+    if (!roleRow) throw new Error("Nenhum responsável encontrado para este cliente");
+
+    const ownerId = roleRow.user_id as string;
+    const { data: userRes, error: getErr } = await supabaseAdmin.auth.admin.getUserById(ownerId);
+    if (getErr) throw new Error(getErr.message);
+
+    const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(ownerId, {
+      password: data.new_password,
+    });
+    if (updErr) throw new Error(updErr.message);
+
+    return { ok: true, email: userRes.user?.email ?? null };
+  });
+
 export type TenantPayment = {
   id: string;
   tenant_id: string;

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2 } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -12,6 +12,7 @@ import {
   updateTenant,
   registerPayment,
   listTenantPayments,
+  resetTenantOwnerPassword,
   type TenantStatus,
   type Tenant,
 } from "@/lib/tenant.functions";
@@ -66,6 +67,7 @@ function ClientesMaster() {
 
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [payingTenant, setPayingTenant] = useState<Tenant | null>(null);
+  const [resetTenant, setResetTenant] = useState<Tenant | null>(null);
 
   return (
     <div className="space-y-8">
@@ -149,6 +151,13 @@ function ClientesMaster() {
                   <DollarSign className="h-4 w-4" />
                 </button>
                 <button
+                  onClick={() => setResetTenant(t)}
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  title="Resetar senha do responsável"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => setEditing(t)}
                   className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
                   title="Editar"
@@ -174,7 +183,95 @@ function ClientesMaster() {
       <NewTenantDialog open={openNew} onClose={() => setOpenNew(false)} />
       <EditTenantDialog tenant={editing} onClose={() => setEditing(null)} />
       <PaymentDialog tenant={payingTenant} onClose={() => setPayingTenant(null)} />
+      <ResetPasswordDialog tenant={resetTenant} onClose={() => setResetTenant(null)} />
     </div>
+  );
+}
+
+function ResetPasswordDialog({ tenant, onClose }: { tenant: Tenant | null; onClose: () => void }) {
+  const reset = useServerFn(resetTenantOwnerPassword);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  // Reset state when tenant changes
+  const tid = tenant?.id ?? "";
+  const [lastTid, setLastTid] = useState("");
+  if (tenant && tid !== lastTid) {
+    setLastTid(tid);
+    setPassword("");
+    setConfirm("");
+  }
+
+  const m = useMutation({
+    mutationFn: () =>
+      reset({ data: { tenant_id: tenant!.id, new_password: password } }),
+    onSuccess: (r) => {
+      toast.success(
+        r.email
+          ? `Senha redefinida para ${r.email}`
+          : "Senha redefinida com sucesso",
+      );
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const canSubmit =
+    password.length >= 8 && password === confirm && !m.isPending;
+
+  return (
+    <Dialog open={!!tenant} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            Resetar senha — {tenant?.business_name}
+          </DialogTitle>
+        </DialogHeader>
+        {tenant && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Defina uma nova senha para o responsável deste cliente. Ele poderá
+              entrar imediatamente com a nova senha — informe-o pelo seu canal
+              habitual.
+            </p>
+            <Field label="Nova senha (mín. 8 caracteres)">
+              <Input
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </Field>
+            <Field label="Confirmar nova senha">
+              <Input
+                type="text"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </Field>
+            {password && confirm && password !== confirm && (
+              <p className="text-xs text-red-400">As senhas não coincidem.</p>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => m.mutate()}
+            disabled={!canSubmit}
+            className="bg-amber-400 text-zinc-950 hover:bg-amber-300"
+          >
+            {m.isPending ? "Redefinindo…" : "Redefinir senha"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -298,6 +298,21 @@ function Dashboard() {
                       {a.amount > 0 && (
                         <span className="hidden sm:inline text-sm tabular-nums text-muted-foreground shrink-0">{formatBRL(Number(a.amount))}</span>
                       )}
+                      {(() => {
+                        const wa = waHrefFor(a);
+                        return wa ? (
+                          <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90 shrink-0"
+                            title="Enviar WhatsApp ao cliente"
+                            aria-label="Enviar WhatsApp ao cliente"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        ) : null;
+                      })()}
                       <div className="hidden sm:block">
                         <Select
                           value={a.status}
@@ -336,6 +351,21 @@ function Dashboard() {
 
                     </div>
                     <div className="mt-2 pl-13 sm:pl-0 sm:mt-0 sm:hidden flex gap-2">
+                      {(() => {
+                        const wa = waHrefFor(a);
+                        return wa ? (
+                          <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-8 w-10 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90"
+                            title="Enviar WhatsApp ao cliente"
+                            aria-label="Enviar WhatsApp ao cliente"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        ) : null;
+                      })()}
                       <Button
                         size="sm"
                         className="flex-1 h-8"

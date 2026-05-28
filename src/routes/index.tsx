@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus, MessageCircle } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
@@ -9,9 +10,11 @@ import {
   fetchAppointments, fetchExpenses, fetchUpcomingAppointments,
   fetchDistinctProcedures, createAppointment, updateAppointment, updateAppointmentStatus,
   deleteAppointment, fetchReceivables, APPOINTMENT_STATUS_LABEL,
-  createExpense, updateExpense, deleteExpense, type Expense,
+  createExpense, updateExpense, deleteExpense, fetchClients, type Expense,
   type Appointment, type AppointmentStatus,
 } from "@/lib/data";
+import { getContactSettings } from "@/lib/settings.functions";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatBRL, formatDateBR, PAYMENT_METHODS } from "@/lib/format";
 import { MonthPicker } from "@/components/MonthPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,6 +99,25 @@ function Dashboard() {
     queryKey: ["receivables"],
     queryFn: fetchReceivables,
   });
+  const clientsQ = useQuery({ queryKey: ["clients"], queryFn: fetchClients });
+  const fetchSettings = useServerFn(getContactSettings);
+  const settingsQ = useQuery({
+    queryKey: ["contact-settings"],
+    queryFn: () => fetchSettings(),
+  });
+  const phonesByClientId = useMemo(() => {
+    const m = new Map<string, string>();
+    (clientsQ.data ?? []).forEach((c) => {
+      if (c.phone) m.set(c.id, c.phone);
+    });
+    return m;
+  }, [clientsQ.data]);
+  const waHrefFor = (a: Appointment) => {
+    if (a.status !== "a_fazer") return null;
+    const phone = a.client_id ? phonesByClientId.get(a.client_id) ?? "" : "";
+    if (!phone) return null;
+    return buildWhatsAppLink(phone, settingsQ.data?.whatsapp_message_template ?? "", a);
+  };
   const [editingReceivable, setEditingReceivable] = useState<Appointment | null>(null);
 
   const invalidateAll = () => {
@@ -276,6 +298,21 @@ function Dashboard() {
                       {a.amount > 0 && (
                         <span className="hidden sm:inline text-sm tabular-nums text-muted-foreground shrink-0">{formatBRL(Number(a.amount))}</span>
                       )}
+                      {(() => {
+                        const wa = waHrefFor(a);
+                        return wa ? (
+                          <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90 shrink-0"
+                            title="Enviar WhatsApp ao cliente"
+                            aria-label="Enviar WhatsApp ao cliente"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        ) : null;
+                      })()}
                       <div className="hidden sm:block">
                         <Select
                           value={a.status}
@@ -314,6 +351,21 @@ function Dashboard() {
 
                     </div>
                     <div className="mt-2 pl-13 sm:pl-0 sm:mt-0 sm:hidden flex gap-2">
+                      {(() => {
+                        const wa = waHrefFor(a);
+                        return wa ? (
+                          <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-8 w-10 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90"
+                            title="Enviar WhatsApp ao cliente"
+                            aria-label="Enviar WhatsApp ao cliente"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
+                        ) : null;
+                      })()}
                       <Button
                         size="sm"
                         className="flex-1 h-8"

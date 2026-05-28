@@ -12,4 +12,11 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    build: {
+      // Compatibilidade ampla com navegadores antigos (iOS Safari 13+, Chrome 80+, etc.)
+      target: ["es2019", "edge88", "firefox78", "chrome80", "safari13"],
+      cssTarget: ["chrome80", "safari13", "firefox78", "edge88"],
+    },
+  },
 });

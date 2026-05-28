@@ -372,6 +372,27 @@ function ConfiguracoesPage() {
           </div>
         </div>
 
+        {/* Mensagem WhatsApp personalizada */}
+        <div className="space-y-2 pt-2 border-t border-border">
+          <Label htmlFor="wa-template" className="flex items-center gap-2">
+            <MessageSquareText className="h-4 w-4 text-primary" />
+            Mensagem padrão para o WhatsApp do cliente
+          </Label>
+          <Textarea
+            id="wa-template"
+            value={waTemplate}
+            onChange={(e) => setWaTemplate(e.target.value)}
+            placeholder={DEFAULT_WHATSAPP_TEMPLATE}
+            rows={4}
+            maxLength={1000}
+          />
+          <p className="text-xs text-muted-foreground">
+            Use as variáveis <code>{"{cliente}"}</code>, <code>{"{data}"}</code>,
+            {" "}<code>{"{horario}"}</code> e <code>{"{procedimento}"}</code>. Elas serão substituídas
+            automaticamente ao clicar no ícone do WhatsApp no atendimento.
+          </p>
+        </div>
+
         <Button onClick={() => m.mutate({})} disabled={m.isPending || q.isLoading} className="w-full sm:w-auto">
           <Save className="h-4 w-4 mr-2" />
           {m.isPending ? "Salvando…" : "Salvar alterações"}

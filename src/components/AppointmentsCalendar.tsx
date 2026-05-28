@@ -17,6 +17,7 @@ import { formatBRL } from "@/lib/format";
 import { splitProcedureNames } from "@/lib/procedures";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 type ViewMode = "month" | "week" | "day";
 

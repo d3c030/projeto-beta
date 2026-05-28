@@ -621,3 +621,109 @@ export const getSecurityAudit = createServerFn({ method: "GET" })
 
     return { score, checks, tables, generatedAt: new Date().toISOString() };
   });
+
+// ============================================================
+// Login gate — bloqueia clientes com licença vencida/suspensa
+// ============================================================
+export type LoginAccessResult =
+  | { allowed: true }
+  | { allowed: false; reason: string };
+
+export const checkLoginAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LoginAccessResult> => {
+    const userId = context.userId;
+
+    // Superadmin nunca é bloqueado
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if ((roles ?? []).some((r) => r.role === "superadmin")) {
+      return { allowed: true };
+    }
+
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("tenant_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Sem tenant associado — não há o que bloquear
+    if (!prof?.tenant_id) return { allowed: true };
+
+    const { data: t } = await supabaseAdmin
+      .from("tenants")
+      .select("status, license_expires_at")
+      .eq("id", prof.tenant_id)
+      .maybeSingle();
+
+    const denied = {
+      allowed: false as const,
+      reason: "Acesso bloqueado. Contate o administrador do sistema.",
+    };
+
+    if (!t) return denied;
+    if (t.status === "suspenso") return denied;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (t.license_expires_at && t.license_expires_at < today) {
+      return denied;
+    }
+
+    return { allowed: true };
+  });
+
+// ============================================================
+// Uso de armazenamento por tenant (estimativa)
+// ============================================================
+export type TenantUsage = {
+  tenant_id: string;
+  rows: number;
+  bytes: number;
+  perTable: Array<{ table: string; rows: number; bytes: number }>;
+};
+
+// Bytes médios estimados por registro (aproximado, baseado nas colunas)
+const AVG_BYTES_PER_ROW: Record<string, number> = {
+  appointments: 420,
+  appointment_payments: 260,
+  clients: 320,
+  expenses: 260,
+  procedures: 220,
+  agenda_days: 160,
+};
+
+export const getTenantsUsage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<TenantUsage[]> => {
+    await assertSuperadmin(context.userId);
+
+    const usageByTenant = new Map<string, TenantUsage>();
+
+    for (const table of TENANT_SCOPED_TABLES) {
+      const { data, error } = await supabaseAdmin
+        .from(table)
+        .select("tenant_id")
+        .limit(100000);
+      if (error) continue;
+      const avg = AVG_BYTES_PER_ROW[table] ?? 250;
+      const counts = new Map<string, number>();
+      for (const row of data ?? []) {
+        const tid = (row as { tenant_id: string | null }).tenant_id;
+        if (!tid) continue;
+        counts.set(tid, (counts.get(tid) ?? 0) + 1);
+      }
+      for (const [tid, n] of counts) {
+        const u =
+          usageByTenant.get(tid) ??
+          ({ tenant_id: tid, rows: 0, bytes: 0, perTable: [] } as TenantUsage);
+        u.rows += n;
+        u.bytes += n * avg;
+        u.perTable.push({ table, rows: n, bytes: n * avg });
+        usageByTenant.set(tid, u);
+      }
+    }
+
+    return Array.from(usageByTenant.values());
+  });

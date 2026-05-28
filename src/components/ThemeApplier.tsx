@@ -11,7 +11,7 @@ export function ThemeApplier() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthed(!!session);
     });
-    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
+    supabase.auth.getSession().then((result) => setAuthed(!!result.data.session));
     return () => subscription.unsubscribe();
   }, []);
 

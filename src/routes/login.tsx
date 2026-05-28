@@ -31,16 +31,16 @@ function LoginPage() {
   const insta = masterTenantQ.data?.instagram_url || "";
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
+    supabase.auth.getSession().then((result) => {
+      if (result.data.session) navigate({ to: "/", replace: true });
     });
   }, [navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    const signInResult = await supabase.auth.signInWithPassword({ email, password });
+    if (signInResult.error) {
       setLoading(false);
       toast.error("Credenciais inválidas");
       return;

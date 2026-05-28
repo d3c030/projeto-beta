@@ -845,8 +845,8 @@ function ReceivableDialog({
       .eq("appointment_id", appointment.id)
       .order("paid_at", { ascending: false })
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setHistory((data as typeof history) ?? []);
+      .then((result) => {
+        setHistory((result.data as typeof history) ?? []);
         setLoadingHistory(false);
       });
   }, [appointment]);

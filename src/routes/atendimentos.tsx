@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Plus, Search } from "lucide-react";
 import {
-  fetchAppointmentsRange, fetchDistinctProcedures, createAppointment,
+  fetchAppointmentsRange, fetchDistinctProcedures, fetchClients, createAppointment,
   updateAppointment, deleteAppointment, type Appointment,
 } from "@/lib/data";
+import { getContactSettings } from "@/lib/settings.functions";
 import { formatBRL } from "@/lib/format";
 import { AppointmentDialog } from "@/components/AppointmentDialog";
 import { AppointmentsCalendar } from "@/components/AppointmentsCalendar";
@@ -61,6 +63,20 @@ function AtendimentosPage() {
     queryKey: ["procedures"],
     queryFn: fetchDistinctProcedures,
   });
+  const clientsQ = useQuery({ queryKey: ["clients"], queryFn: fetchClients });
+  const fetchSettings = useServerFn(getContactSettings);
+  const settingsQ = useQuery({
+    queryKey: ["contact-settings"],
+    queryFn: () => fetchSettings(),
+  });
+
+  const phonesByClientId = useMemo(() => {
+    const m = new Map<string, string>();
+    (clientsQ.data ?? []).forEach((c) => {
+      if (c.phone) m.set(c.id, c.phone);
+    });
+    return m;
+  }, [clientsQ.data]);
 
   const filtered = useMemo(() => {
     const list = apptsQ.data ?? [];
@@ -143,6 +159,8 @@ function AtendimentosPage() {
         onViewChange={setView}
         onCardClick={(a) => { setEditing(a); setDialogOpen(true); }}
         onMove={handleMove}
+        phonesByClientId={phonesByClientId}
+        whatsappTemplate={settingsQ.data?.whatsapp_message_template ?? ""}
       />
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

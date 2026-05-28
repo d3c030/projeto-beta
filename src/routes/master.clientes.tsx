@@ -560,7 +560,19 @@ function NewTenantDialog({ open, onClose }: { open: boolean; onClose: () => void
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Plano">
-              <Input value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })} />
+              <Input
+                list="plan-presets"
+                value={form.plan_name}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  // Auto-zera mensalidade ao escolher Indique e Ganhe
+                  if (v.toLowerCase().includes("indique")) {
+                    setForm({ ...form, plan_name: v, monthly_price: 0 });
+                  } else {
+                    setForm({ ...form, plan_name: v });
+                  }
+                }}
+              />
             </Field>
             <Field label="Mensalidade (R$)">
               <Input type="number" min={0} step="0.01" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: Number(e.target.value) })} />
@@ -678,7 +690,18 @@ function EditTenantDialog({ tenant, onClose }: { tenant: Tenant | null; onClose:
             </Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Plano">
-                <Input value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })} />
+                <Input
+                  list="plan-presets"
+                  value={form.plan_name}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.toLowerCase().includes("indique")) {
+                      setForm({ ...form, plan_name: v, monthly_price: 0 });
+                    } else {
+                      setForm({ ...form, plan_name: v });
+                    }
+                  }}
+                />
               </Field>
               <Field label="Mensalidade (R$)">
                 <Input type="number" min={0} step="0.01" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: Number(e.target.value) })} />

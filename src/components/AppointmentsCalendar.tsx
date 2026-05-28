@@ -11,7 +11,7 @@ import {
   DragOverlay,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import type { Appointment } from "@/lib/data";
 import { formatBRL } from "@/lib/format";
 import { splitProcedureNames } from "@/lib/procedures";
@@ -28,6 +28,10 @@ type Props = {
   onViewChange: (v: ViewMode) => void;
   onCardClick: (a: Appointment) => void;
   onMove: (a: Appointment, newDate: string) => Promise<void> | void;
+  /** Map clientId -> telefone (para o atalho do WhatsApp nos cards "a fazer"). */
+  phonesByClientId?: Map<string, string>;
+  /** Template configurado em Configurações. */
+  whatsappTemplate?: string;
 };
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -61,10 +65,12 @@ function AppointmentCard({
   a,
   compact,
   onClick,
+  waHref,
 }: {
   a: Appointment;
   compact?: boolean;
   onClick: () => void;
+  waHref?: string | null;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: a.id,
@@ -95,9 +101,25 @@ function AppointmentCard({
         <span className="font-medium tabular-nums text-primary">
           {a.time?.slice(0, 5) ?? "--:--"}
         </span>
-        <span className="font-semibold tabular-nums">
-          {formatBRL(Number(a.amount))}
-        </span>
+        <div className="flex items-center gap-1">
+          {waHref && a.status === "a_fazer" && (
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366] text-white hover:opacity-90"
+              title="Enviar WhatsApp ao cliente"
+              aria-label="Enviar WhatsApp ao cliente"
+            >
+              <MessageCircle className="h-3 w-3" />
+            </a>
+          )}
+          <span className="font-semibold tabular-nums">
+            {formatBRL(Number(a.amount))}
+          </span>
+        </div>
       </div>
       <div className="truncate font-medium">{a.client_name}</div>
       {procs.length > 0 && !compact && (
@@ -134,6 +156,7 @@ function DayCell({
   onCardClick,
   onClickEmpty,
   variant,
+  waHrefFor,
 }: {
   date: Date;
   isCurrentMonth?: boolean;
@@ -142,6 +165,7 @@ function DayCell({
   onCardClick: (a: Appointment) => void;
   onClickEmpty?: () => void;
   variant: "month" | "week" | "day";
+  waHrefFor?: (a: Appointment) => string | null;
 }) {
   const iso = toISO(date);
   const { setNodeRef, isOver } = useDroppable({ id: iso });
@@ -188,6 +212,7 @@ function DayCell({
             a={a}
             compact={variant === "month"}
             onClick={() => onCardClick(a)}
+            waHref={waHrefFor?.(a) ?? null}
           />
         ))}
       </div>
@@ -203,8 +228,20 @@ export function AppointmentsCalendar({
   onViewChange,
   onCardClick,
   onMove,
+  phonesByClientId,
+  whatsappTemplate,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const waHrefFor = useMemo(() => {
+    return (a: Appointment) => {
+      if (a.status !== "a_fazer") return null;
+      const phone = a.client_id ? phonesByClientId?.get(a.client_id) ?? "" : "";
+      if (!phone) return null;
+      // import dinâmico evitado — usamos util importado abaixo
+      return buildWhatsAppLink(phone, whatsappTemplate ?? "", a);
+    };
+  }, [phonesByClientId, whatsappTemplate]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -377,6 +414,7 @@ export function AppointmentsCalendar({
                           key={a.id}
                           a={a}
                           onClick={() => onCardClick(a)}
+                          waHref={waHrefFor(a)}
                         />
                       ))}
                     </div>
@@ -413,6 +451,7 @@ export function AppointmentsCalendar({
                 appointments={items}
                 onCardClick={onCardClick}
                 variant={view}
+                waHrefFor={waHrefFor}
               />
             );
           })}
@@ -422,7 +461,7 @@ export function AppointmentsCalendar({
       <DragOverlay dropAnimation={null}>
         {activeAppt ? (
           <div className="pointer-events-none">
-            <AppointmentCard a={activeAppt} compact={view === "month"} onClick={() => {}} />
+            <AppointmentCard a={activeAppt} compact={view === "month"} onClick={() => {}} waHref={null} />
           </div>
         ) : null}
       </DragOverlay>

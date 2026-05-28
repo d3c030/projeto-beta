@@ -107,7 +107,10 @@ function ConfiguracoesPage() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `logo-${Date.now()}.${ext}`;
+      const { data: sess } = await supabase.auth.getUser();
+      const uid = sess.user?.id;
+      if (!uid) throw new Error("Não autenticado");
+      const path = `${uid}/logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("branding")
         .upload(path, file, { cacheControl: "3600", upsert: true });
@@ -136,7 +139,10 @@ function ConfiguracoesPage() {
     setUploadingQr(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `pix-qr-${Date.now()}.${ext}`;
+      const { data: sess } = await supabase.auth.getUser();
+      const uid = sess.user?.id;
+      if (!uid) throw new Error("Não autenticado");
+      const path = `${uid}/pix-qr-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("branding")
         .upload(path, file, { cacheControl: "3600", upsert: true });

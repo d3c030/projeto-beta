@@ -58,12 +58,13 @@ function MasterLayout() {
         {/* Tabs */}
         <div className="max-w-6xl mx-auto px-2 md:px-6">
           <nav className="flex gap-1 overflow-x-auto scrollbar-none">
-            {items.map(({ to, label, icon: Icon, exact }) => {
-              const active = isActive(to, exact);
+            {items.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.to, item.exact);
               return (
                 <Link
-                  key={to}
-                  to={to}
+                  key={item.to}
+                  to={item.to}
                   className={cn(
                     "relative inline-flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
                     active
@@ -72,7 +73,7 @@ function MasterLayout() {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {label}
+                  {item.label}
                   {active && (
                     <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-amber-400" />
                   )}

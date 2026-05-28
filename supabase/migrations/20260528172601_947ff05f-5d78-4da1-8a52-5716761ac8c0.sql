@@ -1,0 +1,2 @@
+ALTER TABLE public.tenants
+ADD COLUMN IF NOT EXISTS whatsapp_message_template text NOT NULL DEFAULT 'Olá {cliente}! Passando para confirmar o seu atendimento em {data} às {horario}. Qualquer dúvida estou à disposição. 💖';

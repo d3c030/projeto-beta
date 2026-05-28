@@ -489,6 +489,7 @@ export type Database = {
           theme: string
           updated_at: string
           whatsapp: string
+          whatsapp_message_template: string
         }
         Insert: {
           business_name: string
@@ -511,6 +512,7 @@ export type Database = {
           theme?: string
           updated_at?: string
           whatsapp?: string
+          whatsapp_message_template?: string
         }
         Update: {
           business_name?: string
@@ -533,6 +535,7 @@ export type Database = {
           theme?: string
           updated_at?: string
           whatsapp?: string
+          whatsapp_message_template?: string
         }
         Relationships: []
       }

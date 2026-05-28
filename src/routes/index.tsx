@@ -99,6 +99,25 @@ function Dashboard() {
     queryKey: ["receivables"],
     queryFn: fetchReceivables,
   });
+  const clientsQ = useQuery({ queryKey: ["clients"], queryFn: fetchClients });
+  const fetchSettings = useServerFn(getContactSettings);
+  const settingsQ = useQuery({
+    queryKey: ["contact-settings"],
+    queryFn: () => fetchSettings(),
+  });
+  const phonesByClientId = useMemo(() => {
+    const m = new Map<string, string>();
+    (clientsQ.data ?? []).forEach((c) => {
+      if (c.phone) m.set(c.id, c.phone);
+    });
+    return m;
+  }, [clientsQ.data]);
+  const waHrefFor = (a: Appointment) => {
+    if (a.status !== "a_fazer") return null;
+    const phone = a.client_id ? phonesByClientId.get(a.client_id) ?? "" : "";
+    if (!phone) return null;
+    return buildWhatsAppLink(phone, settingsQ.data?.whatsapp_message_template ?? "", a);
+  };
   const [editingReceivable, setEditingReceivable] = useState<Appointment | null>(null);
 
   const invalidateAll = () => {

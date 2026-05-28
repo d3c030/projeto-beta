@@ -97,9 +97,9 @@ export function AppShell() {
       setAuthState(session ? "in" : "out");
       setUserEmail(session?.user?.email ?? null);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      setAuthState(data.session ? "in" : "out");
-      setUserEmail(data.session?.user?.email ?? null);
+    supabase.auth.getSession().then((result) => {
+      setAuthState(result.data.session ? "in" : "out");
+      setUserEmail(result.data.session?.user?.email ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);

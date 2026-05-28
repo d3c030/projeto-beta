@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2, KeyRound } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2, KeyRound, Database } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -13,6 +13,7 @@ import {
   registerPayment,
   listTenantPayments,
   resetTenantOwnerPassword,
+  getTenantsUsage,
   type TenantStatus,
   type Tenant,
 } from "@/lib/tenant.functions";
@@ -43,7 +44,10 @@ function ClientesMaster() {
   const fetchList = useServerFn(listTenants);
   const setStatus = useServerFn(updateTenantStatus);
   const remove = useServerFn(deleteTenant);
+  const fetchUsage = useServerFn(getTenantsUsage);
   const q = useQuery({ queryKey: ["master-tenants"], queryFn: () => fetchList() });
+  const usageQ = useQuery({ queryKey: ["master-tenants-usage"], queryFn: () => fetchUsage() });
+  const usageMap = new Map((usageQ.data ?? []).map((u) => [u.tenant_id, u]));
   const [openNew, setOpenNew] = useState(false);
 
   const statusM = useMutation({
@@ -116,6 +120,9 @@ function ClientesMaster() {
               <Stat label="Mensalidade" value={formatBRL(Number(t.monthly_price || 0))} />
               <Stat label="Vencimento" value={`dia ${t.due_day}`} />
             </div>
+
+            {/* Storage usage */}
+            <UsageRow usage={usageMap.get(t.id)} loading={usageQ.isLoading} />
 
             {/* License + contact */}
             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-950/50 border border-zinc-800/60 px-3 py-2.5">

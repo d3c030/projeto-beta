@@ -75,6 +75,12 @@ function ClientesMaster() {
 
   return (
     <div className="space-y-8">
+      <datalist id="plan-presets">
+        <option value="Básico" />
+        <option value="Profissional" />
+        <option value="Premium" />
+        <option value="Indique e Ganhe" />
+      </datalist>
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-amber-400/80 mb-1.5">Clientes</p>

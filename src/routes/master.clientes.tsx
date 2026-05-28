@@ -291,6 +291,42 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function UsageRow({
+  usage,
+  loading,
+}: {
+  usage: { rows: number; bytes: number; perTable: Array<{ table: string; rows: number; bytes: number }> } | undefined;
+  loading: boolean;
+}) {
+  const rows = usage?.rows ?? 0;
+  const bytes = usage?.bytes ?? 0;
+  const detail = (usage?.perTable ?? [])
+    .sort((a, b) => b.rows - a.rows)
+    .map((p) => `${p.table}: ${p.rows}`)
+    .join("  ·  ");
+  return (
+    <div
+      className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-950/50 border border-zinc-800/60 px-3 py-2.5"
+      title={detail || undefined}
+    >
+      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <Database className="h-3 w-3 text-zinc-500" />
+        <span className="text-zinc-500">Uso de dados</span>
+      </div>
+      <div className="text-xs text-zinc-200 font-medium">
+        {loading ? "…" : `${rows.toLocaleString("pt-BR")} reg · ${formatBytes(bytes)}`}
+      </div>
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: TenantStatus }) {
   const opt = STATUS_OPTIONS.find((s) => s.value === status)!;
   return (

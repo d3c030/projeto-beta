@@ -13,6 +13,7 @@ import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcedimentosRouteImport } from './routes/procedimentos'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as IndiqueRouteImport } from './routes/indique'
 import { Route as CustosRouteImport } from './routes/custos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
@@ -24,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterIndexRouteImport } from './routes/master.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterSegurancaRouteImport } from './routes/master.seguranca'
+import { Route as MasterIndicacoesRouteImport } from './routes/master.indicacoes'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as MasterAcessosRouteImport } from './routes/master.acessos'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
@@ -50,6 +52,11 @@ const MasterRoute = MasterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndiqueRoute = IndiqueRouteImport.update({
+  id: '/indique',
+  path: '/indique',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustosRoute = CustosRouteImport.update({
@@ -107,6 +114,11 @@ const MasterSegurancaRoute = MasterSegurancaRouteImport.update({
   path: '/seguranca',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterIndicacoesRoute = MasterIndicacoesRouteImport.update({
+  id: '/indicacoes',
+  path: '/indicacoes',
+  getParentRoute: () => MasterRoute,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -152,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
@@ -159,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
@@ -176,12 +190,14 @@ export interface FileRoutesByTo {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/master': typeof MasterIndexRoute
   '/t/$slug/agendar': typeof TSlugAgendarRouteWithChildren
@@ -199,6 +215,7 @@ export interface FileRoutesById {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
@@ -206,6 +223,7 @@ export interface FileRoutesById {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
@@ -225,6 +243,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/master'
     | '/procedimentos'
@@ -232,6 +251,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
     | '/master/'
@@ -249,12 +269,14 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/master'
     | '/t/$slug/agendar'
@@ -271,6 +293,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/master'
     | '/procedimentos'
@@ -278,6 +301,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
     | '/master/'
@@ -296,6 +320,7 @@ export interface RootRouteChildren {
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CustosRoute: typeof CustosRoute
+  IndiqueRoute: typeof IndiqueRoute
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRouteWithChildren
   ProcedimentosRoute: typeof ProcedimentosRoute
@@ -331,6 +356,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/indique': {
+      id: '/indique'
+      path: '/indique'
+      fullPath: '/indique'
+      preLoaderRoute: typeof IndiqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/custos': {
@@ -410,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterSegurancaRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/indicacoes': {
+      id: '/master/indicacoes'
+      path: '/indicacoes'
+      fullPath: '/master/indicacoes'
+      preLoaderRoute: typeof MasterIndicacoesRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -476,6 +515,7 @@ const AgendarRouteWithChildren =
 interface MasterRouteChildren {
   MasterAcessosRoute: typeof MasterAcessosRoute
   MasterClientesRoute: typeof MasterClientesRoute
+  MasterIndicacoesRoute: typeof MasterIndicacoesRoute
   MasterSegurancaRoute: typeof MasterSegurancaRoute
   MasterIndexRoute: typeof MasterIndexRoute
 }
@@ -483,6 +523,7 @@ interface MasterRouteChildren {
 const MasterRouteChildren: MasterRouteChildren = {
   MasterAcessosRoute: MasterAcessosRoute,
   MasterClientesRoute: MasterClientesRoute,
+  MasterIndicacoesRoute: MasterIndicacoesRoute,
   MasterSegurancaRoute: MasterSegurancaRoute,
   MasterIndexRoute: MasterIndexRoute,
 }
@@ -525,6 +566,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   CustosRoute: CustosRoute,
+  IndiqueRoute: IndiqueRoute,
   LoginRoute: LoginRoute,
   MasterRoute: MasterRouteWithChildren,
   ProcedimentosRoute: ProcedimentosRoute,

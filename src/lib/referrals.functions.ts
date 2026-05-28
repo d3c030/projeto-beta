@@ -136,7 +136,7 @@ export const updateReferralStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertSuperadmin(context.userId);
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: { status: ReferralStatus; notes?: string } = { status: data.status };
     if (typeof data.notes === "string") patch.notes = data.notes;
     const { error } = await supabaseAdmin.from("referrals").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);

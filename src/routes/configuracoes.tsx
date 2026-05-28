@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Instagram, MessageCircle, Save, Image as ImageIcon, Upload, Palette, Check, QrCode, KeyRound } from "lucide-react";
+import { Instagram, MessageCircle, Save, Image as ImageIcon, Upload, Palette, Check, QrCode, KeyRound, MessageSquareText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getContactSettings, updateContactSettings, THEMES, type ThemeName } from "@/lib/settings.functions";
+import { DEFAULT_WHATSAPP_TEMPLATE } from "@/lib/whatsapp";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,7 @@ function ConfiguracoesPage() {
   const [pixKey, setPixKey] = useState("");
   const [pixCopiaCola, setPixCopiaCola] = useState("");
   const [pixQrUrl, setPixQrUrl] = useState("");
+  const [waTemplate, setWaTemplate] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
 
@@ -66,6 +68,7 @@ function ConfiguracoesPage() {
       setPixKey(q.data.pix_key ?? "");
       setPixCopiaCola(q.data.pix_copia_cola ?? "");
       setPixQrUrl(q.data.pix_qr_url ?? "");
+      setWaTemplate(q.data.whatsapp_message_template ?? "");
     }
   }, [q.data]);
 
@@ -81,6 +84,7 @@ function ConfiguracoesPage() {
           pix_key: pixKey.trim(),
           pix_copia_cola: pixCopiaCola.trim(),
           pix_qr_url: (over.pixQr ?? pixQrUrl).trim(),
+          whatsapp_message_template: waTemplate.trim(),
         },
       }),
     onSuccess: () => {
@@ -366,6 +370,27 @@ function ConfiguracoesPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mensagem WhatsApp personalizada */}
+        <div className="space-y-2 pt-2 border-t border-border">
+          <Label htmlFor="wa-template" className="flex items-center gap-2">
+            <MessageSquareText className="h-4 w-4 text-primary" />
+            Mensagem padrão para o WhatsApp do cliente
+          </Label>
+          <Textarea
+            id="wa-template"
+            value={waTemplate}
+            onChange={(e) => setWaTemplate(e.target.value)}
+            placeholder={DEFAULT_WHATSAPP_TEMPLATE}
+            rows={4}
+            maxLength={1000}
+          />
+          <p className="text-xs text-muted-foreground">
+            Use as variáveis <code>{"{cliente}"}</code>, <code>{"{data}"}</code>,
+            {" "}<code>{"{horario}"}</code> e <code>{"{procedimento}"}</code>. Elas serão substituídas
+            automaticamente ao clicar no ícone do WhatsApp no atendimento.
+          </p>
         </div>
 
         <Button onClick={() => m.mutate({})} disabled={m.isPending || q.isLoading} className="w-full sm:w-auto">

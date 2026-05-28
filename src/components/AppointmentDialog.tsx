@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -35,6 +36,7 @@ export function AppointmentDialog({
   const [time, setTime] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientId, setClientId] = useState<string | null>(null);
+  const [clientPhone, setClientPhone] = useState("");
   const [selectedProcs, setSelectedProcs] = useState<string[]>([]);
   const [payment, setPayment] = useState<string>("Pix");
   const [amount, setAmount] = useState<string>("");
@@ -62,8 +64,21 @@ export function AppointmentDialog({
       setAmount(initial ? String(initial.amount) : "");
       setAmountTouched(!!initial); // when editing, respect existing amount
       setNotes(initial?.notes ?? "");
+      const initialClient = initial?.client_id
+        ? (clientsQ.data ?? []).find((c) => c.id === initial.client_id)
+        : null;
+      setClientPhone(initialClient?.phone ?? "");
     }
-  }, [open, initial]);
+  }, [open, initial, clientsQ.data]);
+
+  // Quando o usuário seleciona um cliente existente, prefill o telefone.
+  useEffect(() => {
+    if (!open) return;
+    if (clientId) {
+      const c = (clientsQ.data ?? []).find((x) => x.id === clientId);
+      if (c) setClientPhone(c.phone ?? "");
+    }
+  }, [clientId, clientsQ.data, open]);
 
   // Auto-sum suggestion: only updates the amount while the user hasn't typed manually.
   useEffect(() => {
@@ -93,6 +108,33 @@ export function AppointmentDialog({
         notes: notes.trim() || null,
         status: initial?.status ?? "a_fazer",
       });
+      // Persistir telefone no cadastro do cliente, se houver um cliente existente
+      // (o trigger cria/associa o cliente quando ainda não existe, então tentamos
+      // localizar pelo nome normalizado em seguida).
+      const phoneClean = clientPhone.replace(/\D/g, "");
+      if (phoneClean) {
+        try {
+          if (clientId) {
+            await supabase
+              .from("clients")
+              .update({ phone: clientPhone.trim() })
+              .eq("id", clientId);
+          } else {
+            const norm = clientName
+              .trim()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/\s+/g, " ");
+            await supabase
+              .from("clients")
+              .update({ phone: clientPhone.trim() })
+              .eq("normalized_name", norm);
+          }
+        } catch {
+          // não bloqueia o salvamento do atendimento
+        }
+      }
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -135,6 +177,22 @@ export function AppointmentDialog({
               }}
               placeholder="Procurar ou criar novo cliente"
             />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="client-phone">Telefone / WhatsApp do cliente</Label>
+            <Input
+              id="client-phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="(11) 99999-9999"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              maxLength={20}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Será salvo no cadastro do cliente e usado para enviar mensagens em um clique.
+            </p>
           </div>
 
           <div className="grid gap-2">

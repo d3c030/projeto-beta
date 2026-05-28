@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import defaultLogo from "@/assets/logo.png";
 import { getTenantBySlug } from "@/lib/tenant-public.functions";
+import { checkLoginAccess } from "@/lib/tenant.functions";
 import { Instagram, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -39,11 +40,26 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error("Credenciais inválidas");
       return;
     }
+    try {
+      const access = await checkLoginAccess();
+      if (!access.allowed) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error(access.reason);
+        return;
+      }
+    } catch {
+      await supabase.auth.signOut();
+      setLoading(false);
+      toast.error("Não foi possível validar seu acesso. Tente novamente.");
+      return;
+    }
+    setLoading(false);
     navigate({ to: "/", replace: true });
   };
 

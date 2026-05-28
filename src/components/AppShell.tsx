@@ -125,16 +125,18 @@ export function AppShell() {
   };
 
   // Block suspended tenants entirely (superadmin bypasses)
-  if (!isSuperadmin && tenantStatus === "suspenso") {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const isExpired = !!licenseExpiresAt && licenseExpiresAt < todayIso;
+  if (!isSuperadmin && (tenantStatus === "suspenso" || isExpired)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md w-full text-center space-y-4 border border-border rounded-2xl p-8 bg-card">
           <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
             <Lock className="h-6 w-6 text-destructive" />
           </div>
-          <h1 className="font-display text-xl">Acesso suspenso</h1>
+          <h1 className="font-display text-xl">Acesso bloqueado</h1>
           <p className="text-sm text-muted-foreground">
-            Sua conta está temporariamente suspensa. Entre em contato com o suporte para regularizar e voltar a usar o painel.
+            Contate o administrador do sistema para regularizar sua licença e voltar a usar o painel.
           </p>
           <button
             onClick={handleLogout}

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2, KeyRound } from "lucide-react";
+import { Plus, Trash2, Pencil, ExternalLink, DollarSign, CalendarClock, Phone, Users2, KeyRound, Database } from "lucide-react";
 import { toast } from "sonner";
 import {
   listTenants,
@@ -13,6 +13,7 @@ import {
   registerPayment,
   listTenantPayments,
   resetTenantOwnerPassword,
+  getTenantsUsage,
   type TenantStatus,
   type Tenant,
 } from "@/lib/tenant.functions";
@@ -43,7 +44,10 @@ function ClientesMaster() {
   const fetchList = useServerFn(listTenants);
   const setStatus = useServerFn(updateTenantStatus);
   const remove = useServerFn(deleteTenant);
+  const fetchUsage = useServerFn(getTenantsUsage);
   const q = useQuery({ queryKey: ["master-tenants"], queryFn: () => fetchList() });
+  const usageQ = useQuery({ queryKey: ["master-tenants-usage"], queryFn: () => fetchUsage() });
+  const usageMap = new Map((usageQ.data ?? []).map((u) => [u.tenant_id, u]));
   const [openNew, setOpenNew] = useState(false);
 
   const statusM = useMutation({
@@ -71,6 +75,12 @@ function ClientesMaster() {
 
   return (
     <div className="space-y-8">
+      <datalist id="plan-presets">
+        <option value="Básico" />
+        <option value="Profissional" />
+        <option value="Premium" />
+        <option value="Indique e Ganhe" />
+      </datalist>
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-amber-400/80 mb-1.5">Clientes</p>
@@ -116,6 +126,9 @@ function ClientesMaster() {
               <Stat label="Mensalidade" value={formatBRL(Number(t.monthly_price || 0))} />
               <Stat label="Vencimento" value={`dia ${t.due_day}`} />
             </div>
+
+            {/* Storage usage */}
+            <UsageRow usage={usageMap.get(t.id)} loading={usageQ.isLoading} />
 
             {/* License + contact */}
             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-950/50 border border-zinc-800/60 px-3 py-2.5">
@@ -280,6 +293,42 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="rounded-lg bg-zinc-950/50 border border-zinc-800/60 px-2.5 py-2">
       <p className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</p>
       <p className="text-sm text-zinc-100 truncate mt-0.5 font-medium">{value}</p>
+    </div>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function UsageRow({
+  usage,
+  loading,
+}: {
+  usage: { rows: number; bytes: number; perTable: Array<{ table: string; rows: number; bytes: number }> } | undefined;
+  loading: boolean;
+}) {
+  const rows = usage?.rows ?? 0;
+  const bytes = usage?.bytes ?? 0;
+  const detail = (usage?.perTable ?? [])
+    .sort((a, b) => b.rows - a.rows)
+    .map((p) => `${p.table}: ${p.rows}`)
+    .join("  ·  ");
+  return (
+    <div
+      className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-950/50 border border-zinc-800/60 px-3 py-2.5"
+      title={detail || undefined}
+    >
+      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <Database className="h-3 w-3 text-zinc-500" />
+        <span className="text-zinc-500">Uso de dados</span>
+      </div>
+      <div className="text-xs text-zinc-200 font-medium">
+        {loading ? "…" : `${rows.toLocaleString("pt-BR")} reg · ${formatBytes(bytes)}`}
+      </div>
     </div>
   );
 }
@@ -517,7 +566,19 @@ function NewTenantDialog({ open, onClose }: { open: boolean; onClose: () => void
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Plano">
-              <Input value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })} />
+              <Input
+                list="plan-presets"
+                value={form.plan_name}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  // Auto-zera mensalidade ao escolher Indique e Ganhe
+                  if (v.toLowerCase().includes("indique")) {
+                    setForm({ ...form, plan_name: v, monthly_price: 0 });
+                  } else {
+                    setForm({ ...form, plan_name: v });
+                  }
+                }}
+              />
             </Field>
             <Field label="Mensalidade (R$)">
               <Input type="number" min={0} step="0.01" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: Number(e.target.value) })} />
@@ -635,7 +696,18 @@ function EditTenantDialog({ tenant, onClose }: { tenant: Tenant | null; onClose:
             </Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Plano">
-                <Input value={form.plan_name} onChange={(e) => setForm({ ...form, plan_name: e.target.value })} />
+                <Input
+                  list="plan-presets"
+                  value={form.plan_name}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.toLowerCase().includes("indique")) {
+                      setForm({ ...form, plan_name: v, monthly_price: 0 });
+                    } else {
+                      setForm({ ...form, plan_name: v });
+                    }
+                  }}
+                />
               </Field>
               <Field label="Mensalidade (R$)">
                 <Input type="number" min={0} step="0.01" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: Number(e.target.value) })} />

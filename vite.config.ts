@@ -14,9 +14,10 @@ export default defineConfig({
   },
   vite: {
     build: {
-      // Compatibilidade ampla com navegadores antigos (iOS Safari 13+, Chrome 80+, etc.)
-      target: ["es2019", "edge88", "firefox78", "chrome80", "safari13"],
-      cssTarget: ["chrome80", "safari13", "firefox78", "edge88"],
+      // ES2020 supports destructuring/spread natively — covers iOS Safari 14+,
+      // Chrome 80+, Firefox 78+, Edge 88+ without forcing esbuild to downlevel.
+      target: "es2020",
+      cssTarget: ["chrome80", "safari14", "firefox78", "edge88"],
     },
   },
 });

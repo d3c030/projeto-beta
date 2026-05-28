@@ -389,6 +389,45 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          referred_name: string
+          referred_whatsapp: string
+          referrer_name: string
+          referrer_user_id: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referred_name: string
+          referred_whatsapp: string
+          referrer_name?: string
+          referrer_user_id?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referred_name?: string
+          referred_whatsapp?: string
+          referrer_name?: string
+          referrer_user_id?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenant_payments: {
         Row: {
           amount: number
@@ -551,6 +590,12 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "tenant_owner" | "tenant_member"
+      referral_status:
+        | "novo"
+        | "contatado"
+        | "em_negociacao"
+        | "fechado"
+        | "perdido"
       tenant_status: "ativo" | "inadimplente" | "suspenso"
     }
     CompositeTypes: {
@@ -680,6 +725,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "tenant_owner", "tenant_member"],
+      referral_status: [
+        "novo",
+        "contatado",
+        "em_negociacao",
+        "fechado",
+        "perdido",
+      ],
       tenant_status: ["ativo", "inadimplente", "suspenso"],
     },
   },

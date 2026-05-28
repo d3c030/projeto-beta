@@ -25,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MasterIndexRouteImport } from './routes/master.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterSegurancaRouteImport } from './routes/master.seguranca'
+import { Route as MasterIndicacoesRouteImport } from './routes/master.indicacoes'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as MasterAcessosRouteImport } from './routes/master.acessos'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
@@ -113,6 +114,11 @@ const MasterSegurancaRoute = MasterSegurancaRouteImport.update({
   path: '/seguranca',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterIndicacoesRoute = MasterIndicacoesRouteImport.update({
+  id: '/indicacoes',
+  path: '/indicacoes',
+  getParentRoute: () => MasterRoute,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/master': typeof MasterIndexRoute
   '/t/$slug/agendar': typeof TSlugAgendarRouteWithChildren
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/master/': typeof MasterIndexRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
     | '/master/'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/master'
     | '/t/$slug/agendar'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
     | '/master/'
@@ -430,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterSegurancaRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/indicacoes': {
+      id: '/master/indicacoes'
+      path: '/indicacoes'
+      fullPath: '/master/indicacoes'
+      preLoaderRoute: typeof MasterIndicacoesRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -496,6 +515,7 @@ const AgendarRouteWithChildren =
 interface MasterRouteChildren {
   MasterAcessosRoute: typeof MasterAcessosRoute
   MasterClientesRoute: typeof MasterClientesRoute
+  MasterIndicacoesRoute: typeof MasterIndicacoesRoute
   MasterSegurancaRoute: typeof MasterSegurancaRoute
   MasterIndexRoute: typeof MasterIndexRoute
 }
@@ -503,6 +523,7 @@ interface MasterRouteChildren {
 const MasterRouteChildren: MasterRouteChildren = {
   MasterAcessosRoute: MasterAcessosRoute,
   MasterClientesRoute: MasterClientesRoute,
+  MasterIndicacoesRoute: MasterIndicacoesRoute,
   MasterSegurancaRoute: MasterSegurancaRoute,
   MasterIndexRoute: MasterIndexRoute,
 }

@@ -13,6 +13,7 @@ import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcedimentosRouteImport } from './routes/procedimentos'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as IndiqueRouteImport } from './routes/indique'
 import { Route as CustosRouteImport } from './routes/custos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
@@ -50,6 +51,11 @@ const MasterRoute = MasterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndiqueRoute = IndiqueRouteImport.update({
+  id: '/indique',
+  path: '/indique',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustosRoute = CustosRouteImport.update({
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/custos': typeof CustosRoute
+  '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
   '/procedimentos': typeof ProcedimentosRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/master'
     | '/procedimentos'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/procedimentos'
     | '/usuarios'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/configuracoes'
     | '/custos'
+    | '/indique'
     | '/login'
     | '/master'
     | '/procedimentos'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CustosRoute: typeof CustosRoute
+  IndiqueRoute: typeof IndiqueRoute
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRouteWithChildren
   ProcedimentosRoute: typeof ProcedimentosRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/indique': {
+      id: '/indique'
+      path: '/indique'
+      fullPath: '/indique'
+      preLoaderRoute: typeof IndiqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/custos': {
@@ -525,6 +545,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   CustosRoute: CustosRoute,
+  IndiqueRoute: IndiqueRoute,
   LoginRoute: LoginRoute,
   MasterRoute: MasterRouteWithChildren,
   ProcedimentosRoute: ProcedimentosRoute,
@@ -534,3 +555,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

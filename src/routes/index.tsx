@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Sparkles, CalendarRange, ClipboardList, Clock, Pencil, CheckCircle2, HandCoins, Plus, MessageCircle } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
@@ -9,9 +10,11 @@ import {
   fetchAppointments, fetchExpenses, fetchUpcomingAppointments,
   fetchDistinctProcedures, createAppointment, updateAppointment, updateAppointmentStatus,
   deleteAppointment, fetchReceivables, APPOINTMENT_STATUS_LABEL,
-  createExpense, updateExpense, deleteExpense, type Expense,
+  createExpense, updateExpense, deleteExpense, fetchClients, type Expense,
   type Appointment, type AppointmentStatus,
 } from "@/lib/data";
+import { getContactSettings } from "@/lib/settings.functions";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatBRL, formatDateBR, PAYMENT_METHODS } from "@/lib/format";
 import { MonthPicker } from "@/components/MonthPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

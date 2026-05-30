@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -28,7 +28,8 @@ export const Route = createFileRoute("/usuarios")({
     try {
       const state = await getAccessState();
       if (!state.isSuperadmin) throw redirect({ to: "/" });
-    } catch {
+    } catch (e) {
+      if (isRedirect(e)) throw e;
       throw redirect({ to: "/" });
     }
   },

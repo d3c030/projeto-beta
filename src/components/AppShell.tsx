@@ -259,6 +259,7 @@ export function AppShell() {
             isActive={isActive}
             isSuperadmin={isSuperadmin}
             userEmail={userEmail}
+            items={mobileSecondary}
           />
         </div>
       </nav>

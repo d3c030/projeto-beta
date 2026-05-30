@@ -92,6 +92,9 @@ export function AppShell() {
   const tenantLogo = accessQ.data?.tenant?.logo_url;
   const logo = tenantLogo || settingsQ.data?.logo_url || defaultLogo;
   const isSuperadmin = !!accessQ.data?.isSuperadmin;
+  const navItems = getNavItems(isSuperadmin);
+  const mobilePrimary = navItems.slice(0, 4);
+  const mobileSecondary = navItems.slice(4);
   const tenantStatus = accessQ.data?.tenant?.status ?? "ativo";
   const licenseExpiresAt = accessQ.data?.tenant?.license_expires_at ?? null;
 

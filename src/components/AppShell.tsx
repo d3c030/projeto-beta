@@ -52,7 +52,7 @@ function LicenseCountdown({ expiresAt }: { expiresAt: string | null }) {
   );
 }
 
-const navItems = [
+const baseNavItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/atendimentos", label: "Atendimentos", icon: CalendarDays },
   { to: "/agenda", label: "Agenda", icon: CalendarCheck },
@@ -64,9 +64,6 @@ const navItems = [
   { to: "/ajuda", label: "Ajuda", icon: LifeBuoy },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
-
-const mobilePrimary = navItems.slice(0, 4); // Início, Atend., Agenda, Clientes
-const mobileSecondary = navItems.slice(4);  // Procedimentos, Custos, Usuários, Configurações
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });

@@ -49,7 +49,7 @@ function AgendaPage() {
     mutationFn: async ({ date, is_open }: { date: string; is_open: boolean }) => {
       const { error } = await supabase
         .from("agenda_days")
-        .upsert({ date, is_open }, { onConflict: "date" });
+        .upsert({ date, is_open }, { onConflict: "tenant_id,date" });
       if (error) throw error;
     },
     onSuccess: () => {

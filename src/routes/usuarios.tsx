@@ -1,10 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2, UserPlus } from "lucide-react";
 import { listUsers, createUser, deleteUser } from "@/lib/users.functions";
 import { formatDateBR } from "@/lib/format";
+import { getAccessState } from "@/lib/tenant.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,17 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/usuarios")({
   head: () => ({ meta: [{ title: "Usuários — Studio Taiane Oliveira" }] }),
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw redirect({ to: "/login" });
+    try {
+      const state = await getAccessState();
+      if (!state.isSuperadmin) throw redirect({ to: "/" });
+    } catch (e) {
+      if (isRedirect(e)) throw e;
+      throw redirect({ to: "/" });
+    }
+  },
   component: UsersPage,
 });
 

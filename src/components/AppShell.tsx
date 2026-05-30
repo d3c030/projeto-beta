@@ -52,7 +52,7 @@ function LicenseCountdown({ expiresAt }: { expiresAt: string | null }) {
   );
 }
 
-const navItems = [
+const baseNavItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/atendimentos", label: "Atendimentos", icon: CalendarDays },
   { to: "/agenda", label: "Agenda", icon: CalendarCheck },
@@ -65,8 +65,11 @@ const navItems = [
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
-const mobilePrimary = navItems.slice(0, 4); // Início, Atend., Agenda, Clientes
-const mobileSecondary = navItems.slice(4);  // Procedimentos, Custos, Usuários, Configurações
+type NavItem = { to: string; label: string; icon: typeof Home };
+
+function getNavItems(isSuperadmin: boolean): NavItem[] {
+  return baseNavItems.filter((i) => i.to !== "/usuarios" || isSuperadmin);
+}
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -89,6 +92,9 @@ export function AppShell() {
   const tenantLogo = accessQ.data?.tenant?.logo_url;
   const logo = tenantLogo || settingsQ.data?.logo_url || defaultLogo;
   const isSuperadmin = !!accessQ.data?.isSuperadmin;
+  const navItems = getNavItems(isSuperadmin);
+  const mobilePrimary = navItems.slice(0, 4);
+  const mobileSecondary = navItems.slice(4);
   const tenantStatus = accessQ.data?.tenant?.status ?? "ativo";
   const licenseExpiresAt = accessQ.data?.tenant?.license_expires_at ?? null;
 
@@ -253,6 +259,7 @@ export function AppShell() {
             isActive={isActive}
             isSuperadmin={isSuperadmin}
             userEmail={userEmail}
+            items={mobileSecondary}
           />
         </div>
       </nav>
@@ -265,13 +272,15 @@ function MoreMenu({
   isActive,
   isSuperadmin,
   userEmail,
+  items,
 }: {
   isActive: (to: string) => boolean;
   isSuperadmin: boolean;
   userEmail: string | null;
+  items: NavItem[];
 }) {
   const [open, setOpen] = useState(false);
-  const anySecondaryActive = mobileSecondary.some((i) => isActive(i.to)) || isActive("/master");
+  const anySecondaryActive = items.some((i) => isActive(i.to)) || isActive("/master");
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -290,7 +299,7 @@ function MoreMenu({
           <SheetTitle>Mais opções</SheetTitle>
         </SheetHeader>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          {mobileSecondary.map(({ to, label, icon: Icon }) => (
+          {items.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}

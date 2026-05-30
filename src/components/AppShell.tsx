@@ -272,13 +272,15 @@ function MoreMenu({
   isActive,
   isSuperadmin,
   userEmail,
+  items,
 }: {
   isActive: (to: string) => boolean;
   isSuperadmin: boolean;
   userEmail: string | null;
+  items: NavItem[];
 }) {
   const [open, setOpen] = useState(false);
-  const anySecondaryActive = mobileSecondary.some((i) => isActive(i.to)) || isActive("/master");
+  const anySecondaryActive = items.some((i) => isActive(i.to)) || isActive("/master");
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -297,7 +299,7 @@ function MoreMenu({
           <SheetTitle>Mais opções</SheetTitle>
         </SheetHeader>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          {mobileSecondary.map(({ to, label, icon: Icon }) => (
+          {items.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}

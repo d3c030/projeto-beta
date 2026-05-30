@@ -65,6 +65,12 @@ const baseNavItems = [
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
+type NavItem = { to: string; label: string; icon: typeof Home };
+
+function getNavItems(isSuperadmin: boolean): NavItem[] {
+  return baseNavItems.filter((i) => i.to !== "/usuarios" || isSuperadmin);
+}
+
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();

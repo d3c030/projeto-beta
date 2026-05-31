@@ -118,6 +118,16 @@ function Dashboard() {
     if (!phone) return null;
     return buildWhatsAppLink(phone, settingsQ.data?.whatsapp_message_template ?? "", a);
   };
+  const handleWaClick = (a: Appointment, e: React.MouseEvent) => {
+    const wa = waHrefFor(a);
+    if (wa) return; // anchor handles navigation
+    e.preventDefault();
+    toast.info(
+      "Adicione o telefone deste cliente em \u201CClientes\u201D para enviar mensagens no WhatsApp.",
+    );
+    setEditing(a);
+    setDialogOpen(true);
+  };
   const [editingReceivable, setEditingReceivable] = useState<Appointment | null>(null);
 
   const invalidateAll = () => {

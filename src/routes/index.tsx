@@ -310,18 +310,20 @@ function Dashboard() {
                       )}
                       {(() => {
                         const wa = waHrefFor(a);
-                        return wa ? (
+                        if (a.status !== "a_fazer") return null;
+                        return (
                           <a
-                            href={wa}
-                            target="_blank"
+                            href={wa ?? "#"}
+                            target={wa ? "_blank" : undefined}
                             rel="noopener noreferrer"
+                            onClick={(e) => handleWaClick(a, e)}
                             className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90 shrink-0"
-                            title="Enviar WhatsApp ao cliente"
+                            title={wa ? "Enviar WhatsApp ao cliente" : "Adicionar telefone do cliente"}
                             aria-label="Enviar WhatsApp ao cliente"
                           >
                             <MessageCircle className="h-4 w-4" />
                           </a>
-                        ) : null;
+                        );
                       })()}
                       <div className="hidden sm:block">
                         <Select

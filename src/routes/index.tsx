@@ -118,6 +118,16 @@ function Dashboard() {
     if (!phone) return null;
     return buildWhatsAppLink(phone, settingsQ.data?.whatsapp_message_template ?? "", a);
   };
+  const handleWaClick = (a: Appointment, e: React.MouseEvent) => {
+    const wa = waHrefFor(a);
+    if (wa) return; // anchor handles navigation
+    e.preventDefault();
+    toast.info(
+      "Adicione o telefone deste cliente em \u201CClientes\u201D para enviar mensagens no WhatsApp.",
+    );
+    setEditing(a);
+    setDialogOpen(true);
+  };
   const [editingReceivable, setEditingReceivable] = useState<Appointment | null>(null);
 
   const invalidateAll = () => {
@@ -300,18 +310,20 @@ function Dashboard() {
                       )}
                       {(() => {
                         const wa = waHrefFor(a);
-                        return wa ? (
+                        if (a.status !== "a_fazer") return null;
+                        return (
                           <a
-                            href={wa}
-                            target="_blank"
+                            href={wa ?? "#"}
+                            target={wa ? "_blank" : undefined}
                             rel="noopener noreferrer"
+                            onClick={(e) => handleWaClick(a, e)}
                             className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90 shrink-0"
-                            title="Enviar WhatsApp ao cliente"
+                            title={wa ? "Enviar WhatsApp ao cliente" : "Adicionar telefone do cliente"}
                             aria-label="Enviar WhatsApp ao cliente"
                           >
                             <MessageCircle className="h-4 w-4" />
                           </a>
-                        ) : null;
+                        );
                       })()}
                       <div className="hidden sm:block">
                         <Select
@@ -353,18 +365,20 @@ function Dashboard() {
                     <div className="mt-2 pl-13 sm:pl-0 sm:mt-0 sm:hidden flex gap-2">
                       {(() => {
                         const wa = waHrefFor(a);
-                        return wa ? (
+                        if (a.status !== "a_fazer") return null;
+                        return (
                           <a
-                            href={wa}
-                            target="_blank"
+                            href={wa ?? "#"}
+                            target={wa ? "_blank" : undefined}
                             rel="noopener noreferrer"
+                            onClick={(e) => handleWaClick(a, e)}
                             className="inline-flex h-8 w-10 items-center justify-center rounded-md bg-[#25D366] text-white hover:opacity-90"
-                            title="Enviar WhatsApp ao cliente"
+                            title={wa ? "Enviar WhatsApp ao cliente" : "Adicionar telefone do cliente"}
                             aria-label="Enviar WhatsApp ao cliente"
                           >
                             <MessageCircle className="h-4 w-4" />
                           </a>
-                        ) : null;
+                        );
                       })()}
                       <Button
                         size="sm"

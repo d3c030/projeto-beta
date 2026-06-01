@@ -242,6 +242,53 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_costs: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          descricao: string
+          id: string
+          notes: string | null
+          pago_em: string | null
+          status: Database["public"]["Enums"]["daily_cost_status"]
+          tenant_id: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          descricao: string
+          id?: string
+          notes?: string | null
+          pago_em?: string | null
+          status?: Database["public"]["Enums"]["daily_cost_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          descricao?: string
+          id?: string
+          notes?: string | null
+          pago_em?: string | null
+          status?: Database["public"]["Enums"]["daily_cost_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_costs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           created_at: string
@@ -312,6 +359,59 @@ export type Database = {
           video_url?: string
         }
         Relationships: []
+      }
+      payment_logs: {
+        Row: {
+          comprovante_enviado_em: string | null
+          comprovante_url: string | null
+          created_at: string
+          id: string
+          mes_referencia: string
+          nota_revisao: string | null
+          qr_visualizado_em: string | null
+          revisado_em: string | null
+          revisado_por: string | null
+          status: Database["public"]["Enums"]["payment_log_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          comprovante_enviado_em?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          id?: string
+          mes_referencia: string
+          nota_revisao?: string | null
+          qr_visualizado_em?: string | null
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: Database["public"]["Enums"]["payment_log_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          comprovante_enviado_em?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          id?: string
+          mes_referencia?: string
+          nota_revisao?: string | null
+          qr_visualizado_em?: string | null
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: Database["public"]["Enums"]["payment_log_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       procedures: {
         Row: {
@@ -593,6 +693,12 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "tenant_owner" | "tenant_member"
+      daily_cost_status: "pendente" | "pago"
+      payment_log_status:
+        | "pendente"
+        | "aguardando_conferencia"
+        | "pago"
+        | "rejeitado"
       referral_status:
         | "novo"
         | "contatado"
@@ -728,6 +834,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "tenant_owner", "tenant_member"],
+      daily_cost_status: ["pendente", "pago"],
+      payment_log_status: [
+        "pendente",
+        "aguardando_conferencia",
+        "pago",
+        "rejeitado",
+      ],
       referral_status: [
         "novo",
         "contatado",

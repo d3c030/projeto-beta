@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users2, Activity, ArrowLeft, Crown, ShieldCheck, Gift } from "lucide-react";
+import { LayoutDashboard, Users2, Activity, ArrowLeft, Crown, ShieldCheck, Gift, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAccessState } from "@/lib/tenant.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/master")({
 const items = [
   { to: "/master", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/master/clientes", label: "Clientes", icon: Users2, exact: false },
+  { to: "/master/cobranca", label: "Cobrança", icon: CreditCard, exact: false },
   { to: "/master/indicacoes", label: "Indicações", icon: Gift, exact: false },
   { to: "/master/acessos", label: "Acessos", icon: Activity, exact: false },
   { to: "/master/seguranca", label: "Segurança", icon: ShieldCheck, exact: false },

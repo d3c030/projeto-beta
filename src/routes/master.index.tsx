@@ -5,6 +5,7 @@ import { Users, TrendingUp, DollarSign, UserPlus, ArrowUpRight, AlertCircle } fr
 import { Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { getSaasMetrics } from "@/lib/tenant.functions";
 import { formatBRL } from "@/lib/format";
+import { DailyCostsAlert } from "@/components/DailyCostsAlert";
 
 export const Route = createFileRoute("/master/")({
   component: MasterDashboard,
@@ -17,6 +18,7 @@ function MasterDashboard() {
 
   return (
     <div className="space-y-8">
+      <DailyCostsAlert scope="master" />
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-amber-400/80 mb-1.5">Dashboard</p>

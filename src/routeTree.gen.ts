@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcedimentosRouteImport } from './routes/procedimentos'
+import { Route as PagarMensalidadeRouteImport } from './routes/pagar-mensalidade'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndiqueRouteImport } from './routes/indique'
@@ -26,6 +27,7 @@ import { Route as MasterIndexRouteImport } from './routes/master.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterSegurancaRouteImport } from './routes/master.seguranca'
 import { Route as MasterIndicacoesRouteImport } from './routes/master.indicacoes'
+import { Route as MasterCobrancaRouteImport } from './routes/master.cobranca'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as MasterAcessosRouteImport } from './routes/master.acessos'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
@@ -42,6 +44,11 @@ const UsuariosRoute = UsuariosRouteImport.update({
 const ProcedimentosRoute = ProcedimentosRouteImport.update({
   id: '/procedimentos',
   path: '/procedimentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PagarMensalidadeRoute = PagarMensalidadeRouteImport.update({
+  id: '/pagar-mensalidade',
+  path: '/pagar-mensalidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasterRoute = MasterRouteImport.update({
@@ -119,6 +126,11 @@ const MasterIndicacoesRoute = MasterIndicacoesRouteImport.update({
   path: '/indicacoes',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterCobrancaRoute = MasterCobrancaRouteImport.update({
+  id: '/cobranca',
+  path: '/cobranca',
+  getParentRoute: () => MasterRoute,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -167,11 +179,13 @@ export interface FileRoutesByFullPath {
   '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
+  '/pagar-mensalidade': typeof PagarMensalidadeRoute
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -192,11 +206,13 @@ export interface FileRoutesByTo {
   '/custos': typeof CustosRoute
   '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
+  '/pagar-mensalidade': typeof PagarMensalidadeRoute
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/master': typeof MasterIndexRoute
@@ -218,11 +234,13 @@ export interface FileRoutesById {
   '/indique': typeof IndiqueRoute
   '/login': typeof LoginRoute
   '/master': typeof MasterRouteWithChildren
+  '/pagar-mensalidade': typeof PagarMensalidadeRoute
   '/procedimentos': typeof ProcedimentosRoute
   '/usuarios': typeof UsuariosRoute
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -246,11 +264,13 @@ export interface FileRouteTypes {
     | '/indique'
     | '/login'
     | '/master'
+    | '/pagar-mensalidade'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
@@ -271,11 +291,13 @@ export interface FileRouteTypes {
     | '/custos'
     | '/indique'
     | '/login'
+    | '/pagar-mensalidade'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/master'
@@ -296,11 +318,13 @@ export interface FileRouteTypes {
     | '/indique'
     | '/login'
     | '/master'
+    | '/pagar-mensalidade'
     | '/procedimentos'
     | '/usuarios'
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
@@ -323,6 +347,7 @@ export interface RootRouteChildren {
   IndiqueRoute: typeof IndiqueRoute
   LoginRoute: typeof LoginRoute
   MasterRoute: typeof MasterRouteWithChildren
+  PagarMensalidadeRoute: typeof PagarMensalidadeRoute
   ProcedimentosRoute: typeof ProcedimentosRoute
   UsuariosRoute: typeof UsuariosRoute
   TSlugRoute: typeof TSlugRouteWithChildren
@@ -342,6 +367,13 @@ declare module '@tanstack/react-router' {
       path: '/procedimentos'
       fullPath: '/procedimentos'
       preLoaderRoute: typeof ProcedimentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pagar-mensalidade': {
+      id: '/pagar-mensalidade'
+      path: '/pagar-mensalidade'
+      fullPath: '/pagar-mensalidade'
+      preLoaderRoute: typeof PagarMensalidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/master': {
@@ -449,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterIndicacoesRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/cobranca': {
+      id: '/master/cobranca'
+      path: '/cobranca'
+      fullPath: '/master/cobranca'
+      preLoaderRoute: typeof MasterCobrancaRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -515,6 +554,7 @@ const AgendarRouteWithChildren =
 interface MasterRouteChildren {
   MasterAcessosRoute: typeof MasterAcessosRoute
   MasterClientesRoute: typeof MasterClientesRoute
+  MasterCobrancaRoute: typeof MasterCobrancaRoute
   MasterIndicacoesRoute: typeof MasterIndicacoesRoute
   MasterSegurancaRoute: typeof MasterSegurancaRoute
   MasterIndexRoute: typeof MasterIndexRoute
@@ -523,6 +563,7 @@ interface MasterRouteChildren {
 const MasterRouteChildren: MasterRouteChildren = {
   MasterAcessosRoute: MasterAcessosRoute,
   MasterClientesRoute: MasterClientesRoute,
+  MasterCobrancaRoute: MasterCobrancaRoute,
   MasterIndicacoesRoute: MasterIndicacoesRoute,
   MasterSegurancaRoute: MasterSegurancaRoute,
   MasterIndexRoute: MasterIndexRoute,
@@ -569,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndiqueRoute: IndiqueRoute,
   LoginRoute: LoginRoute,
   MasterRoute: MasterRouteWithChildren,
+  PagarMensalidadeRoute: PagarMensalidadeRoute,
   ProcedimentosRoute: ProcedimentosRoute,
   UsuariosRoute: UsuariosRoute,
   TSlugRoute: TSlugRouteWithChildren,
@@ -576,13 +618,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

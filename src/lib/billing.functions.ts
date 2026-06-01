@@ -381,7 +381,14 @@ export const updateDailyCost = createServerFn({ method: "POST" })
       const tenantId = await getTenantIdForUser(context.userId);
       if (!row || row.tenant_id !== tenantId) throw new Error("Acesso negado");
     }
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      descricao?: string;
+      valor?: number;
+      data_vencimento?: string;
+      notes?: string | null;
+      status?: "pendente" | "pago";
+      pago_em?: string | null;
+    } = {};
     if (data.descricao !== undefined) patch.descricao = data.descricao;
     if (data.valor !== undefined) patch.valor = data.valor;
     if (data.data_vencimento !== undefined) patch.data_vencimento = data.data_vencimento;

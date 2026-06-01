@@ -30,6 +30,7 @@ import { ExpenseDialog } from "@/components/ExpenseDialog";
 import { CheckoutSheet } from "@/components/CheckoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DailyCostsAlert } from "@/components/DailyCostsAlert";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Painel — Studio Taiane Oliveira" }] }),
@@ -232,6 +233,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <DailyCostsAlert scope="tenant" />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

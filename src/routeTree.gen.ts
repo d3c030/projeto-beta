@@ -27,6 +27,7 @@ import { Route as MasterIndexRouteImport } from './routes/master.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as MasterSegurancaRouteImport } from './routes/master.seguranca'
 import { Route as MasterIndicacoesRouteImport } from './routes/master.indicacoes'
+import { Route as MasterCobrancaRouteImport } from './routes/master.cobranca'
 import { Route as MasterClientesRouteImport } from './routes/master.clientes'
 import { Route as MasterAcessosRouteImport } from './routes/master.acessos'
 import { Route as AgendarDateRouteImport } from './routes/agendar.$date'
@@ -125,6 +126,11 @@ const MasterIndicacoesRoute = MasterIndicacoesRouteImport.update({
   path: '/indicacoes',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterCobrancaRoute = MasterCobrancaRouteImport.update({
+  id: '/cobranca',
+  path: '/cobranca',
+  getParentRoute: () => MasterRoute,
+} as any)
 const MasterClientesRoute = MasterClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/master': typeof MasterIndexRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/agendar/$date': typeof AgendarDateRoute
   '/master/acessos': typeof MasterAcessosRoute
   '/master/clientes': typeof MasterClientesRoute
+  '/master/cobranca': typeof MasterCobrancaRoute
   '/master/indicacoes': typeof MasterIndicacoesRoute
   '/master/seguranca': typeof MasterSegurancaRoute
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/master'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/agendar/$date'
     | '/master/acessos'
     | '/master/clientes'
+    | '/master/cobranca'
     | '/master/indicacoes'
     | '/master/seguranca'
     | '/t/$slug'
@@ -469,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterIndicacoesRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/cobranca': {
+      id: '/master/cobranca'
+      path: '/cobranca'
+      fullPath: '/master/cobranca'
+      preLoaderRoute: typeof MasterCobrancaRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/master/clientes': {
       id: '/master/clientes'
       path: '/clientes'
@@ -535,6 +554,7 @@ const AgendarRouteWithChildren =
 interface MasterRouteChildren {
   MasterAcessosRoute: typeof MasterAcessosRoute
   MasterClientesRoute: typeof MasterClientesRoute
+  MasterCobrancaRoute: typeof MasterCobrancaRoute
   MasterIndicacoesRoute: typeof MasterIndicacoesRoute
   MasterSegurancaRoute: typeof MasterSegurancaRoute
   MasterIndexRoute: typeof MasterIndexRoute
@@ -543,6 +563,7 @@ interface MasterRouteChildren {
 const MasterRouteChildren: MasterRouteChildren = {
   MasterAcessosRoute: MasterAcessosRoute,
   MasterClientesRoute: MasterClientesRoute,
+  MasterCobrancaRoute: MasterCobrancaRoute,
   MasterIndicacoesRoute: MasterIndicacoesRoute,
   MasterSegurancaRoute: MasterSegurancaRoute,
   MasterIndexRoute: MasterIndexRoute,

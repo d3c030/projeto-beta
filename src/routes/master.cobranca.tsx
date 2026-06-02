@@ -77,8 +77,11 @@ function QrConfigCard() {
       return;
     }
     try {
+      const { data: sess } = await supabase.auth.getUser();
+      const uid = sess.user?.id;
+      if (!uid) throw new Error("Sessão expirada. Faça login novamente.");
       const ext = file.name.split(".").pop() || "png";
-      const path = `qr-master-${Date.now()}.${ext}`;
+      const path = `${uid}/qr-master-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("branding")
         .upload(path, file, { upsert: true, contentType: file.type });

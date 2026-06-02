@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { DailyCostsManager } from "@/components/DailyCostsManager";
+import { DailyCostsAlert } from "@/components/DailyCostsAlert";
 
 export const Route = createFileRoute("/custos")({
   head: () => ({ meta: [{ title: "Custos — Studio Taiane Oliveira" }] }),
@@ -40,6 +42,8 @@ function CustosPage() {
 
   return (
     <div className="space-y-6">
+      <DailyCostsAlert scope="tenant" />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-3xl sm:text-4xl">Custos</h2>
@@ -105,6 +109,17 @@ function CustosPage() {
       >
         <Plus className="h-6 w-6" />
       </Button>
+
+      <section className="pt-4">
+        <div className="mb-3">
+          <h3 className="font-display text-2xl">Contas a pagar / vencimentos</h3>
+          <p className="text-sm text-muted-foreground">
+            Cadastre contas fixas (água, luz, internet) e compras com data de vencimento.
+            Itens vencendo hoje aparecem como alerta na tela inicial.
+          </p>
+        </div>
+        <DailyCostsManager scope="tenant" />
+      </section>
 
       <ExpenseDialog
         open={dialogOpen}

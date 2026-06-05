@@ -122,6 +122,8 @@ function CustosPage() {
         <DailyCostsManager scope="tenant" />
       </section>
 
+      <CostsCharts year={year} monthIdx={monthIdx} current={expQ.data ?? []} />
+
       <ExpenseDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

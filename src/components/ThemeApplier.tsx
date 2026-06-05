@@ -20,6 +20,7 @@ export function ThemeApplier() {
     queryFn: () => getContactSettings(),
     staleTime: 60_000,
     enabled: authed,
+    retry: false,
   });
 
   const theme: ThemeName = q.data?.theme ?? "rosa";

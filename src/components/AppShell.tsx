@@ -84,11 +84,13 @@ export function AppShell() {
     queryKey: ["public-contact-settings"],
     queryFn: () => getContactSettings(),
     enabled: authState === "in",
+    retry: false,
   });
   const accessQ = useQuery({
     queryKey: ["access-state"],
     queryFn: () => getAccessState(),
     enabled: authState === "in",
+    retry: false,
   });
   const tenantLogo = accessQ.data?.tenant?.logo_url;
   const logo = tenantLogo || settingsQ.data?.logo_url || defaultLogo;

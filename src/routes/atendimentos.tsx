@@ -9,6 +9,7 @@ import {
 } from "@/lib/data";
 import { getContactSettings } from "@/lib/settings.functions";
 import { formatBRL } from "@/lib/format";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 import { AppointmentDialog } from "@/components/AppointmentDialog";
 import { AppointmentsCalendar } from "@/components/AppointmentsCalendar";
 import { Button } from "@/components/ui/button";
@@ -65,9 +66,12 @@ function AtendimentosPage() {
   });
   const clientsQ = useQuery({ queryKey: ["clients"], queryFn: fetchClients });
   const fetchSettings = useServerFn(getContactSettings);
+  const { isAuthed } = useAuthReady();
   const settingsQ = useQuery({
     queryKey: ["contact-settings"],
     queryFn: () => fetchSettings(),
+    retry: false,
+    enabled: isAuthed,
   });
 
   const phonesByClientId = useMemo(() => {

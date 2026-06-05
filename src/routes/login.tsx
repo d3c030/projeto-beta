@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import defaultLogo from "@/assets/logo.png";
 import { getTenantBySlug } from "@/lib/tenant-public.functions";
-import { checkLoginAccess } from "@/lib/tenant.functions";
 import { Instagram, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -39,28 +38,23 @@ function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const signInResult = await supabase.auth.signInWithPassword({ email, password });
-    if (signInResult.error) {
-      setLoading(false);
-      toast.error("Credenciais inválidas");
-      return;
-    }
     try {
-      const access = await checkLoginAccess();
-      if (!access.allowed) {
-        await supabase.auth.signOut();
-        setLoading(false);
-        toast.error(access.reason);
+      const signInResult = await supabase.auth.signInWithPassword({ email, password });
+      if (signInResult.error || !signInResult.data.session) {
+        toast.error("Credenciais inválidas");
         return;
       }
-    } catch {
-      await supabase.auth.signOut();
+      // O bloqueio por licença/suspensão é aplicado pelo AppShell após carregar
+      // o estado do tenant — evitamos uma segunda chamada server-fn aqui que
+      // pode falhar por timing do bearer token.
+      toast.success("Bem-vindo!");
+      navigate({ to: "/", replace: true });
+    } catch (err) {
+      console.error("login error", err);
+      toast.error("Erro ao entrar. Tente novamente.");
+    } finally {
       setLoading(false);
-      toast.error("Não foi possível validar seu acesso. Tente novamente.");
-      return;
     }
-    setLoading(false);
-    navigate({ to: "/", replace: true });
   };
 
   return (

@@ -15,6 +15,7 @@ import {
 } from "@/lib/data";
 import { getContactSettings } from "@/lib/settings.functions";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 import { formatBRL, formatDateBR, PAYMENT_METHODS } from "@/lib/format";
 import { MonthPicker } from "@/components/MonthPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,11 +103,12 @@ function Dashboard() {
   });
   const clientsQ = useQuery({ queryKey: ["clients"], queryFn: fetchClients });
   const fetchSettings = useServerFn(getContactSettings);
+  const { isAuthed } = useAuthReady();
   const settingsQ = useQuery({
     queryKey: ["contact-settings"],
     queryFn: () => fetchSettings(),
     retry: false,
-    enabled: useAuthReady().isAuthed,
+    enabled: isAuthed,
   });
   const phonesByClientId = useMemo(() => {
     const m = new Map<string, string>();

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { DailyCostsManager } from "@/components/DailyCostsManager";
 import { DailyCostsAlert } from "@/components/DailyCostsAlert";
+import { CostsCharts } from "@/components/CostsCharts";
 
 export const Route = createFileRoute("/custos")({
   head: () => ({ meta: [{ title: "Custos — Studio Taiane Oliveira" }] }),
@@ -120,6 +121,8 @@ function CustosPage() {
         </div>
         <DailyCostsManager scope="tenant" />
       </section>
+
+      <CostsCharts year={year} monthIdx={monthIdx} current={expQ.data ?? []} />
 
       <ExpenseDialog
         open={dialogOpen}

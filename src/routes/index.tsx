@@ -105,6 +105,8 @@ function Dashboard() {
   const settingsQ = useQuery({
     queryKey: ["contact-settings"],
     queryFn: () => fetchSettings(),
+    retry: false,
+    enabled: useAuthReady().isAuthed,
   });
   const phonesByClientId = useMemo(() => {
     const m = new Map<string, string>();

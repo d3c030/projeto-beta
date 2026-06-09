@@ -118,13 +118,14 @@ export function AppShell() {
   useEffect(() => {
     if (
       authState === "in" &&
+      accessQ.isSuccess &&
       isSuperadmin &&
       pathname === "/" &&
       typeof window !== "undefined"
     ) {
       navigate({ to: "/master", replace: true });
     }
-  }, [authState, isSuperadmin, pathname, navigate]);
+  }, [authState, accessQ.isSuccess, isSuperadmin, pathname, navigate]);
 
   // Public pages render standalone (no admin shell, no auth required)
   const isPublic =

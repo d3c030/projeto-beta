@@ -113,6 +113,19 @@ export function AppShell() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Superadmin lands no painel master por padrão.
+  // Só redireciona em "/" — outras rotas (configurações, clientes etc.) continuam acessíveis.
+  useEffect(() => {
+    if (
+      authState === "in" &&
+      isSuperadmin &&
+      pathname === "/" &&
+      typeof window !== "undefined"
+    ) {
+      navigate({ to: "/master", replace: true });
+    }
+  }, [authState, isSuperadmin, pathname, navigate]);
+
   // Public pages render standalone (no admin shell, no auth required)
   const isPublic =
     pathname === "/login" ||

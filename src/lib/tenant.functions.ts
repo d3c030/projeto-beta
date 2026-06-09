@@ -727,3 +727,218 @@ export const getTenantsUsage = createServerFn({ method: "GET" })
 
     return Array.from(usageByTenant.values());
   });
+
+// ============================================================
+// Master overview — visão 360 (uso, frequência, alertas, receita)
+// ============================================================
+export type TenantOverviewRow = {
+  id: string;
+  business_name: string;
+  slug: string;
+  status: TenantStatus;
+  monthly_price: number;
+  license_expires_at: string | null;
+  last_payment_at: string | null;
+  owner_email: string | null;
+  owner_last_sign_in_at: string | null;
+  owner_created_at: string | null;
+  appointments_30d: number;
+  appointments_7d: number;
+  last_appointment_at: string | null;
+  days_since_last_activity: number | null; // null = nunca usou
+  inactive_alert: boolean; // > 3 dias sem usar
+};
+
+export type MasterOverview = {
+  kpi: {
+    total: number;
+    ativos: number;
+    inadimplentes: number;
+    suspensos: number;
+    mrr: number;
+    novosNoMes: number;
+    inativos3d: number;
+    receitaMes: number;
+    receitaMesAnterior: number;
+    vencendoEm7d: number;
+  };
+  tenants: TenantOverviewRow[];
+  alerts: TenantOverviewRow[]; // inativos > 3 dias OU vencendo em 7d
+  usageChart: Array<{ name: string; total: number; semana: number }>;
+  revenueChart: Array<{ label: string; recebido: number; previsto: number }>;
+  growthChart: Array<{ label: string; count: number }>;
+};
+
+export const getMasterOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MasterOverview> => {
+    await assertSuperadmin(context.userId);
+
+    const now = new Date();
+    const todayIso = now.toISOString().slice(0, 10);
+    const d30 = new Date(now.getTime() - 30 * 86400000).toISOString();
+    const d7 = new Date(now.getTime() - 7 * 86400000).toISOString();
+    const in7d = new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+
+    const [tenantsRes, apptsRes, rolesRes, paymentsRes] = await Promise.all([
+      supabaseAdmin.from("tenants").select("*").order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("appointments")
+        .select("tenant_id, date, created_at")
+        .gte("created_at", d30),
+      supabaseAdmin.from("user_roles").select("user_id, tenant_id, role").eq("role", "tenant_owner"),
+      supabaseAdmin.from("tenant_payments").select("tenant_id, amount, paid_at"),
+    ]);
+    if (tenantsRes.error) throw new Error(tenantsRes.error.message);
+
+    const tenants = (tenantsRes.data ?? []) as Tenant[];
+    const appts = apptsRes.data ?? [];
+    const ownerRows = rolesRes.data ?? [];
+    const payments = paymentsRes.data ?? [];
+
+    // Load owner users
+    const ownerIds = ownerRows.map((r) => r.user_id as string);
+    const ownerMap = new Map<string, { email: string | null; last_sign_in_at: string | null; created_at: string }>();
+    for (const uid of ownerIds) {
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
+        if (data.user) {
+          ownerMap.set(uid, {
+            email: data.user.email ?? null,
+            last_sign_in_at: data.user.last_sign_in_at ?? null,
+            created_at: data.user.created_at,
+          });
+        }
+      } catch {
+        /* skip */
+      }
+    }
+    const ownerByTenant = new Map<string, { email: string | null; last_sign_in_at: string | null; created_at: string }>();
+    for (const r of ownerRows) {
+      const o = ownerMap.get(r.user_id as string);
+      if (o && r.tenant_id) ownerByTenant.set(r.tenant_id as string, o);
+    }
+
+    // Aggregate appointments per tenant
+    const apptsByTenant = new Map<string, { c30: number; c7: number; last: string | null }>();
+    for (const a of appts) {
+      const tid = (a as { tenant_id: string | null }).tenant_id;
+      if (!tid) continue;
+      const created = (a as { created_at: string }).created_at;
+      const start = (a as { date: string | null }).date ?? created.slice(0, 10);
+      const cur = apptsByTenant.get(tid) ?? { c30: 0, c7: 0, last: null };
+      cur.c30 += 1;
+      if (created >= d7) cur.c7 += 1;
+      if (!cur.last || start > cur.last) cur.last = start;
+      apptsByTenant.set(tid, cur);
+    }
+
+    const rows: TenantOverviewRow[] = tenants.map((t) => {
+      const owner = ownerByTenant.get(t.id);
+      const stats = apptsByTenant.get(t.id) ?? { c30: 0, c7: 0, last: null };
+      const lastActivity = stats.last ?? owner?.last_sign_in_at ?? null;
+      const days =
+        lastActivity != null
+          ? Math.floor((Date.now() - new Date(lastActivity).getTime()) / 86400000)
+          : null;
+      return {
+        id: t.id,
+        business_name: t.business_name,
+        slug: t.slug,
+        status: t.status,
+        monthly_price: Number(t.monthly_price || 0),
+        license_expires_at: t.license_expires_at,
+        last_payment_at: t.last_payment_at,
+        owner_email: owner?.email ?? null,
+        owner_last_sign_in_at: owner?.last_sign_in_at ?? null,
+        owner_created_at: owner?.created_at ?? null,
+        appointments_30d: stats.c30,
+        appointments_7d: stats.c7,
+        last_appointment_at: stats.last,
+        days_since_last_activity: days,
+        inactive_alert: days === null || days > 3,
+      };
+    });
+
+    const ativos = rows.filter((r) => r.status === "ativo").length;
+    const inadimplentes = rows.filter((r) => r.status === "inadimplente").length;
+    const suspensos = rows.filter((r) => r.status === "suspenso").length;
+    const mrr = rows.filter((r) => r.status === "ativo").reduce((s, r) => s + r.monthly_price, 0);
+
+    const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const thisMonth = monthKey(now);
+    const prevMonth = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const novosNoMes = tenants.filter((t) => monthKey(new Date(t.created_at)) === thisMonth).length;
+
+    const receitaMes = payments
+      .filter((p) => (p.paid_at as string)?.startsWith(thisMonth))
+      .reduce((s, p) => s + Number(p.amount || 0), 0);
+    const receitaMesAnterior = payments
+      .filter((p) => (p.paid_at as string)?.startsWith(prevMonth))
+      .reduce((s, p) => s + Number(p.amount || 0), 0);
+
+    const vencendoEm7d = rows.filter(
+      (r) => r.license_expires_at && r.license_expires_at >= todayIso && r.license_expires_at <= in7d,
+    ).length;
+
+    const inativos3d = rows.filter((r) => r.status !== "suspenso" && r.inactive_alert).length;
+
+    const alerts = rows.filter(
+      (r) =>
+        (r.status !== "suspenso" && r.inactive_alert) ||
+        (r.license_expires_at && r.license_expires_at <= in7d),
+    );
+
+    // Usage chart: appointments per tenant (top 10 by total 30d)
+    const usageChart = [...rows]
+      .sort((a, b) => b.appointments_30d - a.appointments_30d)
+      .slice(0, 10)
+      .map((r) => ({
+        name: r.business_name.length > 16 ? r.business_name.slice(0, 14) + "…" : r.business_name,
+        total: r.appointments_30d,
+        semana: r.appointments_7d,
+      }));
+
+    // Revenue last 6 months (received) vs expected (MRR)
+    const months: { key: string; label: string }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key: monthKey(d),
+        label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+      });
+    }
+    const revenueChart = months.map((m) => ({
+      label: m.label,
+      recebido: payments
+        .filter((p) => (p.paid_at as string)?.startsWith(m.key))
+        .reduce((s, p) => s + Number(p.amount || 0), 0),
+      previsto: mrr,
+    }));
+
+    // Growth chart
+    const growthChart = months.map((m) => ({
+      label: m.label,
+      count: tenants.filter((t) => monthKey(new Date(t.created_at)) === m.key).length,
+    }));
+
+    return {
+      kpi: {
+        total: rows.length,
+        ativos,
+        inadimplentes,
+        suspensos,
+        mrr,
+        novosNoMes,
+        inativos3d,
+        receitaMes,
+        receitaMesAnterior,
+        vencendoEm7d,
+      },
+      tenants: rows,
+      alerts,
+      usageChart,
+      revenueChart,
+      growthChart,
+    };
+  });

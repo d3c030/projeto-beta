@@ -1,21 +1,12 @@
-import { createFileRoute, Outlet, Link, useRouterState, useNavigate, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users2, Activity, Crown, ShieldCheck, Gift, CreditCard, ExternalLink } from "lucide-react";
+import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { LayoutDashboard, Users2, Activity, Crown, ShieldCheck, Gift, CreditCard, ExternalLink, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAccessState } from "@/lib/tenant.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export const Route = createFileRoute("/master")({
   head: () => ({ meta: [{ title: "Painel Master — Super Admin" }] }),
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login" });
-    try {
-      const state = await getAccessState();
-      if (!state.isSuperadmin) throw redirect({ to: "/" });
-    } catch (e) {
-      throw redirect({ to: "/" });
-    }
-  },
   component: MasterLayout,
 });
 
@@ -31,6 +22,32 @@ const items = [
 function MasterLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { isAuthed, ready } = useAuthReady();
+  const accessQ = useQuery({
+    queryKey: ["access-state"],
+    queryFn: () => getAccessState(),
+    enabled: isAuthed,
+    retry: false,
+    staleTime: 30_000,
+  });
+
+  // Redirect só depois que a sessão estiver pronta E a query resolveu.
+  // Evita o loop "/" ↔ "/master" quando o token ainda não foi anexado.
+  if (ready && !isAuthed) {
+    if (typeof window !== "undefined") navigate({ to: "/login", replace: true });
+    return null;
+  }
+  if (accessQ.isSuccess && !accessQ.data?.isSuperadmin) {
+    if (typeof window !== "undefined") navigate({ to: "/", replace: true });
+    return null;
+  }
+  if (!accessQ.isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm bg-slate-950">
+        Carregando cockpit…
+      </div>
+    );
+  }
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname.startsWith(to);
   return (

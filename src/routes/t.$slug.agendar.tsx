@@ -9,6 +9,7 @@ import {
   isClosedDay,
   isoFromDate,
   normalizeTime,
+  parseISODate,
 } from "@/lib/booking-config";
 import { MONTHS_PT } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -157,6 +158,25 @@ function AgendarTenantPage() {
                   <div key={i} aria-disabled className={cn(base, "text-muted-foreground/50 bg-muted/40 cursor-not-allowed", status === "full" && "line-through")}>
                     {c.day}
                   </div>
+                );
+              }
+              if (waPhone) {
+                const d = parseISODate(iso);
+                const dateLabel = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+                const message = encodeURIComponent(
+                  `Olá${businessName ? ` ${businessName}` : ""}! Gostaria de agendar um horário para o dia ${dateLabel}.`,
+                );
+                const waUrl = `https://wa.me/${waPhone}?text=${message}`;
+                return (
+                  <a
+                    key={i}
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(base, "bg-accent/40 hover:bg-primary hover:text-primary-foreground active:scale-95 cursor-pointer", isToday && "ring-2 ring-primary")}
+                  >
+                    {c.day}
+                  </a>
                 );
               }
               return (

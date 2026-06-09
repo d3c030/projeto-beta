@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users2, Activity, ArrowLeft, Crown, ShieldCheck, Gift, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users2, Activity, Crown, ShieldCheck, Gift, CreditCard, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAccessState } from "@/lib/tenant.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,30 +34,30 @@ function MasterLayout() {
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname.startsWith(to);
   return (
-    <div className="-mx-4 md:-mx-8 -my-6 min-h-[calc(100vh-3.5rem)] md:min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.08),_transparent_55%),_linear-gradient(180deg,_#09090b_0%,_#050507_100%)] text-zinc-100">
+    <div className="-mx-4 md:-mx-8 -my-6 min-h-[calc(100vh-3.5rem)] md:min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(59,130,246,0.12),_transparent_55%),_linear-gradient(180deg,_#0f172a_0%,_#020617_100%)] text-slate-100">
       {/* Top header */}
-      <header className="sticky top-0 md:top-0 z-20 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-3">
+      <header className="sticky top-0 md:top-0 z-20 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
-              <Crown className="h-4 w-4 md:h-4.5 md:w-4.5 text-zinc-950" />
+            <div className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+              <Crown className="h-4 w-4 md:h-4.5 md:w-4.5 text-slate-50" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-amber-400/80 leading-none">Painel</p>
-              <h1 className="font-display text-base md:text-lg text-zinc-50 leading-tight truncate">Master</h1>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-blue-400/80 leading-none">Admin</p>
+              <h1 className="font-display text-base md:text-lg text-slate-50 leading-tight truncate">Cockpit Master</h1>
             </div>
           </div>
           <button
             onClick={() => navigate({ to: "/" })}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 hover:text-zinc-100 px-2.5 py-1.5 text-xs text-zinc-400 transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-900/60 hover:bg-slate-800/80 hover:text-slate-100 px-2.5 py-1.5 text-xs text-slate-300 transition-colors shrink-0"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Voltar</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Painel do cliente</span>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="max-w-6xl mx-auto px-2 md:px-6">
+        <div className="max-w-7xl mx-auto px-2 md:px-6">
           <nav className="flex gap-1 overflow-x-auto scrollbar-none">
             {items.map((item) => {
               const Icon = item.icon;
@@ -69,14 +69,14 @@ function MasterLayout() {
                   className={cn(
                     "relative inline-flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
                     active
-                      ? "text-amber-400"
-                      : "text-zinc-400 hover:text-zinc-100",
+                      ? "text-blue-400"
+                      : "text-slate-400 hover:text-slate-100",
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
                   {active && (
-                    <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-amber-400" />
+                    <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-blue-400" />
                   )}
                 </Link>
               );
@@ -86,7 +86,7 @@ function MasterLayout() {
       </header>
 
       {/* Main */}
-      <main className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
         <Outlet />
       </main>
     </div>

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Users, DollarSign, AlertTriangle, Activity, TrendingUp, TrendingDown,
-  CalendarClock, Zap, CheckCircle2, PauseCircle, Ban, ArrowUpRight, MessageCircle,
+  CalendarClock, CheckCircle2, PauseCircle, Ban, ArrowUpRight,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,

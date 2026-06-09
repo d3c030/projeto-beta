@@ -784,7 +784,7 @@ export const getMasterOverview = createServerFn({ method: "GET" })
       supabaseAdmin.from("tenants").select("*").order("created_at", { ascending: false }),
       supabaseAdmin
         .from("appointments")
-        .select("tenant_id, start_at, created_at")
+        .select("tenant_id, date, created_at")
         .gte("created_at", d30),
       supabaseAdmin.from("user_roles").select("user_id, tenant_id, role").eq("role", "tenant_owner"),
       supabaseAdmin.from("tenant_payments").select("tenant_id, amount, paid_at"),
@@ -825,7 +825,7 @@ export const getMasterOverview = createServerFn({ method: "GET" })
       const tid = (a as { tenant_id: string | null }).tenant_id;
       if (!tid) continue;
       const created = (a as { created_at: string }).created_at;
-      const start = (a as { start_at: string | null }).start_at ?? created;
+      const start = (a as { date: string | null }).date ?? created.slice(0, 10);
       const cur = apptsByTenant.get(tid) ?? { c30: 0, c7: 0, last: null };
       cur.c30 += 1;
       if (created >= d7) cur.c7 += 1;

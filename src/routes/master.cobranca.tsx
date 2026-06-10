@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Upload, Eye, CheckCircle2, XCircle, QrCode, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/format";
 import { DailyCostsManager } from "@/components/DailyCostsManager";
 
@@ -33,12 +35,26 @@ function MasterCobranca() {
         </p>
       </header>
 
-      <QrConfigCard />
-      <BillingOverviewCard />
-      <section>
-        <h2 className="font-display text-xl text-zinc-50 mb-3">Minhas contas a pagar</h2>
-        <DailyCostsManager scope="master" />
-      </section>
+      <Tabs defaultValue="mensalidades" className="w-full">
+        <TabsList className="bg-zinc-900/60 border border-zinc-800">
+          <TabsTrigger value="mensalidades">Mensalidades</TabsTrigger>
+          <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
+          <TabsTrigger value="config">QR & contas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="mensalidades" className="mt-5">
+          <BillingOverviewCard />
+        </TabsContent>
+        <TabsContent value="comprovantes" className="mt-5">
+          <ComprovantesTab />
+        </TabsContent>
+        <TabsContent value="config" className="mt-5 space-y-8">
+          <QrConfigCard />
+          <section>
+            <h2 className="font-display text-xl text-zinc-50 mb-3">Minhas contas a pagar</h2>
+            <DailyCostsManager scope="master" />
+          </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -176,8 +192,8 @@ function BillingOverviewCard() {
   const qc = useQueryClient();
   const fetchList = useServerFn(listBillingOverview);
   const reviewFn = useServerFn(reviewPayment);
-  const viewFn = useServerFn(getComprovanteSignedUrl);
   const q = useQuery({ queryKey: ["billing-overview"], queryFn: () => fetchList() });
+  const preview = useComprovantePreview();
 
   const reviewM = useMutation({
     mutationFn: (v: { log_id: string; decision: "pago" | "rejeitado"; nota?: string }) =>
@@ -188,15 +204,6 @@ function BillingOverviewCard() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const openComprovante = async (path: string) => {
-    try {
-      const r = await viewFn({ data: { path } });
-      window.open(r.url, "_blank");
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
 
   const rows = q.data ?? [];
   const aguardando = rows.filter((r) => r.log?.status === "aguardando_conferencia").length;
@@ -264,7 +271,9 @@ function BillingOverviewCard() {
                     <td className="py-3 pr-3">
                       {r.log?.comprovante_url ? (
                         <button
-                          onClick={() => openComprovante(r.log!.comprovante_url!)}
+                          onClick={() =>
+                            preview.open(r.log!.comprovante_url!, r.business_name)
+                          }
                           className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline"
                         >
                           <Eye className="h-3.5 w-3.5" /> Ver
@@ -307,6 +316,7 @@ function BillingOverviewCard() {
           </table>
         </div>
       )}
+      {preview.node}
     </section>
   );
 }
@@ -326,5 +336,222 @@ function BillingStatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${x.cls}`}>
       {x.label}
     </span>
+  );
+}
+
+// ============================================================
+// Inline preview (image/PDF) + Comprovantes tab
+// ============================================================
+function useComprovantePreview() {
+  const viewFn = useServerFn(getComprovanteSignedUrl);
+  const [state, setState] = useState<{
+    open: boolean;
+    url: string;
+    title: string;
+    isPdf: boolean;
+    loading: boolean;
+  }>({ open: false, url: "", title: "", isPdf: false, loading: false });
+
+  const open = async (path: string, title: string) => {
+    setState({ open: true, url: "", title, isPdf: false, loading: true });
+    try {
+      const r = await viewFn({ data: { path } });
+      const isPdf = /\.pdf(\?|$)/i.test(path);
+      setState({ open: true, url: r.url, title, isPdf, loading: false });
+    } catch (e) {
+      toast.error((e as Error).message);
+      setState((s) => ({ ...s, open: false, loading: false }));
+    }
+  };
+
+  const node = (
+    <Dialog
+      open={state.open}
+      onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}
+    >
+      <DialogContent className="max-w-4xl bg-zinc-950 border-zinc-800 text-zinc-100">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between gap-3">
+            <span>Comprovante — {state.title}</span>
+            {state.url && (
+              <a
+                href={state.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-amber-400 hover:underline font-normal"
+              >
+                abrir em nova aba ↗
+              </a>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="w-full h-[75vh] bg-zinc-900/50 rounded-md overflow-hidden flex items-center justify-center">
+          {state.loading ? (
+            <p className="text-sm text-zinc-500">Carregando…</p>
+          ) : state.isPdf ? (
+            <iframe src={state.url} title="Comprovante" className="w-full h-full" />
+          ) : (
+            <img
+              src={state.url}
+              alt="Comprovante"
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return { open, node };
+}
+
+function ComprovantesTab() {
+  const qc = useQueryClient();
+  const fetchList = useServerFn(listBillingOverview);
+  const reviewFn = useServerFn(reviewPayment);
+  const q = useQuery({ queryKey: ["billing-overview"], queryFn: () => fetchList() });
+  const preview = useComprovantePreview();
+  const [statusFilter, setStatusFilter] = useState<"all" | "aguardando_conferencia" | "pago" | "rejeitado">(
+    "aguardando_conferencia",
+  );
+
+  const reviewM = useMutation({
+    mutationFn: (v: { log_id: string; decision: "pago" | "rejeitado"; nota?: string }) =>
+      reviewFn({ data: { log_id: v.log_id, decision: v.decision, nota: v.nota } }),
+    onSuccess: () => {
+      toast.success("Atualizado");
+      qc.invalidateQueries({ queryKey: ["billing-overview"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = useMemo(() => {
+    const list = (q.data ?? []).filter((r) => !!r.log?.comprovante_url);
+    const filtered =
+      statusFilter === "all" ? list : list.filter((r) => r.log?.status === statusFilter);
+    // sort by due date (day of month) ascending
+    return [...filtered].sort((a, b) => a.due_day - b.due_day);
+  }, [q.data, statusFilter]);
+
+  return (
+    <section className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur p-5 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-sm font-medium text-zinc-100">Comprovantes recebidos</h2>
+          <p className="text-xs text-zinc-500">
+            Ordenados por dia de vencimento. Clique em “Ver” para visualizar sem baixar.
+          </p>
+        </div>
+        <div className="flex gap-1 text-xs">
+          {(
+            [
+              ["aguardando_conferencia", "Aguardando"],
+              ["pago", "Aprovados"],
+              ["rejeitado", "Rejeitados"],
+              ["all", "Todos"],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setStatusFilter(k)}
+              className={`rounded-md px-2.5 py-1 ring-1 transition ${
+                statusFilter === k
+                  ? "bg-amber-400 text-zinc-950 ring-amber-400"
+                  : "bg-zinc-900/60 text-zinc-300 ring-zinc-700 hover:bg-zinc-800"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {q.isLoading ? (
+        <p className="text-sm text-zinc-500">Carregando…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">Nenhum comprovante neste filtro.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
+                <th className="py-2 pr-3">Vencimento</th>
+                <th className="py-2 pr-3">Cliente</th>
+                <th className="py-2 pr-3">Valor</th>
+                <th className="py-2 pr-3">Enviado em</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/60">
+              {rows.map((r) => {
+                const status = r.log!.status;
+                return (
+                  <tr key={r.tenant_id}>
+                    <td className="py-3 pr-3 text-zinc-300">dia {r.due_day}</td>
+                    <td className="py-3 pr-3">
+                      <p className="text-zinc-100 font-medium">{r.business_name}</p>
+                      <p className="text-xs text-zinc-500">{r.owner_name || "—"}</p>
+                    </td>
+                    <td className="py-3 pr-3 text-zinc-100">{formatBRL(r.monthly_price)}</td>
+                    <td className="py-3 pr-3 text-xs text-zinc-400">
+                      {r.log!.comprovante_enviado_em
+                        ? new Date(r.log!.comprovante_enviado_em).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <BillingStatusBadge status={status} />
+                    </td>
+                    <td className="py-3 pr-3 text-right">
+                      <div className="inline-flex gap-1">
+                        <button
+                          onClick={() =>
+                            preview.open(r.log!.comprovante_url!, r.business_name)
+                          }
+                          className="inline-flex items-center gap-1 rounded-md bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-100"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Ver
+                        </button>
+                        {status !== "pago" && (
+                          <button
+                            onClick={() =>
+                              reviewM.mutate({ log_id: r.log!.id, decision: "pago" })
+                            }
+                            className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 px-2 py-1 text-xs text-emerald-300"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
+                          </button>
+                        )}
+                        {status !== "rejeitado" && (
+                          <button
+                            onClick={() => {
+                              const nota = prompt("Motivo da rejeição (opcional):") ?? "";
+                              reviewM.mutate({
+                                log_id: r.log!.id,
+                                decision: "rejeitado",
+                                nota,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md bg-destructive/15 hover:bg-destructive/25 px-2 py-1 text-xs text-red-300"
+                          >
+                            <XCircle className="h-3.5 w-3.5" /> Rejeitar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {preview.node}
+    </section>
   );
 }

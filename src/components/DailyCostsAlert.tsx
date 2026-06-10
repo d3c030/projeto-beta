@@ -4,14 +4,18 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { listDailyCosts, updateDailyCost } from "@/lib/billing.functions";
 import { formatBRL } from "@/lib/format";
 import { toast } from "sonner";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export function DailyCostsAlert({ scope }: { scope: "master" | "tenant" }) {
   const qc = useQueryClient();
   const fetchList = useServerFn(listDailyCosts);
   const updateFn = useServerFn(updateDailyCost);
+  const { isAuthed } = useAuthReady();
   const q = useQuery({
     queryKey: ["daily-costs", scope, "today"],
     queryFn: () => fetchList({ data: { scope, only_today: true } }),
+    enabled: isAuthed,
+    retry: false,
   });
   const m = useMutation({
     mutationFn: (id: string) => updateFn({ data: { id, status: "pago" } }),

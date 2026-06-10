@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Upload, Eye, CheckCircle2, XCircle, QrCode, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/format";
 import { DailyCostsManager } from "@/components/DailyCostsManager";
 
@@ -33,12 +35,26 @@ function MasterCobranca() {
         </p>
       </header>
 
-      <QrConfigCard />
-      <BillingOverviewCard />
-      <section>
-        <h2 className="font-display text-xl text-zinc-50 mb-3">Minhas contas a pagar</h2>
-        <DailyCostsManager scope="master" />
-      </section>
+      <Tabs defaultValue="mensalidades" className="w-full">
+        <TabsList className="bg-zinc-900/60 border border-zinc-800">
+          <TabsTrigger value="mensalidades">Mensalidades</TabsTrigger>
+          <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
+          <TabsTrigger value="config">QR & contas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="mensalidades" className="mt-5">
+          <BillingOverviewCard />
+        </TabsContent>
+        <TabsContent value="comprovantes" className="mt-5">
+          <ComprovantesTab />
+        </TabsContent>
+        <TabsContent value="config" className="mt-5 space-y-8">
+          <QrConfigCard />
+          <section>
+            <h2 className="font-display text-xl text-zinc-50 mb-3">Minhas contas a pagar</h2>
+            <DailyCostsManager scope="master" />
+          </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

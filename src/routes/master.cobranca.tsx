@@ -192,8 +192,8 @@ function BillingOverviewCard() {
   const qc = useQueryClient();
   const fetchList = useServerFn(listBillingOverview);
   const reviewFn = useServerFn(reviewPayment);
-  const viewFn = useServerFn(getComprovanteSignedUrl);
   const q = useQuery({ queryKey: ["billing-overview"], queryFn: () => fetchList() });
+  const preview = useComprovantePreview();
 
   const reviewM = useMutation({
     mutationFn: (v: { log_id: string; decision: "pago" | "rejeitado"; nota?: string }) =>
@@ -204,15 +204,6 @@ function BillingOverviewCard() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const openComprovante = async (path: string) => {
-    try {
-      const r = await viewFn({ data: { path } });
-      window.open(r.url, "_blank");
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
 
   const rows = q.data ?? [];
   const aguardando = rows.filter((r) => r.log?.status === "aguardando_conferencia").length;
@@ -280,7 +271,9 @@ function BillingOverviewCard() {
                     <td className="py-3 pr-3">
                       {r.log?.comprovante_url ? (
                         <button
-                          onClick={() => openComprovante(r.log!.comprovante_url!)}
+                          onClick={() =>
+                            preview.open(r.log!.comprovante_url!, r.business_name)
+                          }
                           className="inline-flex items-center gap-1 text-xs text-amber-400 hover:underline"
                         >
                           <Eye className="h-3.5 w-3.5" /> Ver
@@ -323,6 +316,7 @@ function BillingOverviewCard() {
           </table>
         </div>
       )}
+      {preview.node}
     </section>
   );
 }

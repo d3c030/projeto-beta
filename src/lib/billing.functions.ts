@@ -326,7 +326,8 @@ export const listDailyCosts = createServerFn({ method: "GET" })
       q = q.eq("tenant_id", tenantId);
     }
     if (data.only_today) {
-      q = q.eq("data_vencimento", todayIso()).eq("status", "pendente");
+      // Mostra vencendo hoje E atrasadas (ainda pendentes)
+      q = q.lte("data_vencimento", todayIso()).eq("status", "pendente");
     }
     q = q.order("data_vencimento", { ascending: true });
     const { data: rows, error } = await q;
